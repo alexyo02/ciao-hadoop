@@ -9,14 +9,22 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 public class DC_Driver {
+
     public static void main(String[] args) throws Exception {
-            if (args.length != 3) {
-                System.err.println("Uso corretto: DC_Driver <input_path> <output_path> <indice_colonna>");
-                System.exit(-1);
-            }
+
+        if (args.length != 2) {
+            System.err.println(
+                    "Uso corretto: DC_Driver <input_path> <output_path>"
+            );
+            System.exit(-1);
+        }
+
         Configuration conf = new Configuration();
-        Job job = new Job.getInstance(conf, "Analisi_CSV");
+
+        Job job = Job.getInstance(conf, "DislikeCounter");
+
         job.setJarByClass(DC_Driver.class);
+
         job.setMapperClass(DC_Mapper.class);
         job.setReducerClass(DC_Reducer.class);
 
@@ -25,6 +33,7 @@ public class DC_Driver {
 
         FileInputFormat.addInputPath(job, new Path(args[0]));
         FileOutputFormat.setOutputPath(job, new Path(args[1]));
-        job.waitForCompletion(true);
-}
+
+        System.exit(job.waitForCompletion(true) ? 0 : 1);
+    }
 }
