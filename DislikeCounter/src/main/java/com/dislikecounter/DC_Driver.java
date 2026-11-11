@@ -2,7 +2,7 @@ package com.dislikecounter;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
@@ -13,14 +13,11 @@ public class DC_Driver {
     public static void main(String[] args) throws Exception {
 
         if (args.length != 2) {
-            System.err.println(
-                    "Uso corretto: DC_Driver <input_path> <output_path>"
-            );
+            System.err.println("Uso corretto: DC_Driver <input_path> <output_path>");
             System.exit(-1);
         }
 
         Configuration conf = new Configuration();
-
         Job job = Job.getInstance(conf, "DislikeCounter");
 
         job.setJarByClass(DC_Driver.class);
@@ -28,8 +25,11 @@ public class DC_Driver {
         job.setMapperClass(DC_Mapper.class);
         job.setReducerClass(DC_Reducer.class);
 
+        job.setMapOutputKeyClass(Text.class);
+        job.setMapOutputValueClass(NullWritable.class);
+
         job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(IntWritable.class);
+        job.setOutputValueClass(NullWritable.class);
 
         FileInputFormat.addInputPath(job, new Path(args[0]));
         FileOutputFormat.setOutputPath(job, new Path(args[1]));

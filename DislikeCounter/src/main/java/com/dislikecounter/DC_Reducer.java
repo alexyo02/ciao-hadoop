@@ -1,19 +1,16 @@
 package com.dislikecounter;
 
-import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
 
 import java.io.IOException;
 
-public class DC_Reducer extends Reducer<Text, IntWritable, Text, IntWritable> {
-
-    private final static IntWritable uno = new IntWritable(1);
+public class DC_Reducer extends Reducer<Text, NullWritable, Text, NullWritable> {
 
     @Override
-    protected void reduce(Text key, Iterable<IntWritable> values, Context context)
+    protected void reduce(Text key, Iterable<NullWritable> values, Context context)
             throws IOException, InterruptedException {
-
-        context.write(key, uno);
+        context.write(key, NullWritable.get());
     }
 }
