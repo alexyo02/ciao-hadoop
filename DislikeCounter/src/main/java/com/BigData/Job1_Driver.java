@@ -1,4 +1,4 @@
-package com.dislikecounter;
+package com.BigData;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -18,7 +18,7 @@ public class DC_Driver {
         }
 
         Configuration conf = new Configuration();
-        Job job = Job.getInstance(conf, "DislikeCounter");
+        Job job = Job.getInstance(conf, "Job1_DislikeCounter");
 
         job.setJarByClass(DC_Driver.class);
 

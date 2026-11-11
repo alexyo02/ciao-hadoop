@@ -1,4 +1,4 @@
-package com.dislikecounter;
+package com.BigData;
 
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
