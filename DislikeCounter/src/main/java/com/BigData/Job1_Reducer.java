@@ -6,7 +6,7 @@ import org.apache.hadoop.mapreduce.Reducer;
 
 import java.io.IOException;
 
-public class DC_Reducer extends Reducer<Text, NullWritable, Text, NullWritable> {
+public class Job1_Reducer extends Reducer<Text, NullWritable, Text, NullWritable> {
 
     @Override
     protected void reduce(Text key, Iterable<NullWritable> values, Context context)

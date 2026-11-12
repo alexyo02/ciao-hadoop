@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DC_Mapper extends Mapper<LongWritable, Text, Text, NullWritable> {
+public class Job1_Mapper extends Mapper<LongWritable, Text, Text, NullWritable> {
 
     // Costanti per le colonne d'interesse
     private static final int TITLE_COLUMN = 2;

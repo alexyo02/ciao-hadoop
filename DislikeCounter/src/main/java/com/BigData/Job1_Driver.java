@@ -20,10 +20,10 @@ public class DC_Driver {
         Configuration conf = new Configuration();
         Job job = Job.getInstance(conf, "Job1_DislikeCounter");
 
-        job.setJarByClass(DC_Driver.class);
+        job.setJarByClass(Job1_Driver.class);
 
-        job.setMapperClass(DC_Mapper.class);
-        job.setReducerClass(DC_Reducer.class);
+        job.setMapperClass(Job1_Mapper.class);
+        job.setReducerClass(Job1_Reducer.class);
 
         job.setMapOutputKeyClass(Text.class);
         job.setMapOutputValueClass(NullWritable.class);
