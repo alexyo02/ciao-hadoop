@@ -32,22 +32,27 @@
     \vfill
     
     % Sezione inferiore: Docenti a sx, Studenti a dx
-    \begin{minipage}{0.45\textwidth}
-        \begin{flushleft} \large
-            \emph{Docenti:}\\
-            Prof. Simona \textsc{Colucci}\\
-            Ing. Verdiana \textsc{Schena}
-        \end{flushleft}
-    \end{minipage}
-    \hfill
-    \begin{minipage}{0.55\textwidth}
-        \begin{flushright} \large
-            \emph{Studenti:}\\
-            Alessio \textsc{Troisi} - Matr. 601812\\
-            Alice Maria \textsc{Patimo} - Matr. 603106\\
-            Giovanni \textsc{Turi} - Matr. xxxxxx
-        \end{flushright}
-    \end{minipage}
+\noindent
+\begin{minipage}[t]{0.40\textwidth}
+    \vspace{0pt}
+    \begin{flushleft}
+        \large
+        \emph{Docenti:}\\
+        Prof. Simona \textsc{Colucci}\\
+        Ing. Verdiana \textsc{Schena}
+    \end{flushleft}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.55\textwidth}
+    \vspace{0pt}
+    \begin{flushright}
+        \large
+        \emph{Studenti:}\\
+        Alessio \textsc{Troisi} - Matr. 601812\\
+        Alice Maria \textsc{Patimo} - Matr. 603106\\
+        Giovanni \textsc{Turi} - Matr. xxxxxx
+    \end{flushright}
+\end{minipage}
     
     \vspace{2.5cm}
     
@@ -776,23 +781,6 @@ complessivo impiegato dai task di Map
 (3 task), di circa 42 secondi per il Dataset B
 (6 task) e di circa 86 secondi per il Dataset C
 (10 task).
-
-Si osserva inoltre che il Dataset A è stato
-il primo job eseguito dopo l'avvio dei servizi
-HDFS e YARN.
-Questa circostanza potrebbe aver influenzato
-il tempo misurato, ad esempio per
-l'inizializzazione dei processi e dei contenitori,
-ma le sole misurazioni temporali non consentono
-di identificare con certezza le cause di tale differenza.
-
-Poiché è disponibile una sola esecuzione
-per ciascuna combinazione, non è possibile
-valutare la variabilità delle misure
-tra ripetizioni: i valori vanno quindi interpretati
-come indicativi e riferiti all'ambiente sperimentale
-considerato, costituito da una singola
-macchina virtuale.
 
 I risultati evidenziano comunque che
 le prestazioni dipendono non soltanto

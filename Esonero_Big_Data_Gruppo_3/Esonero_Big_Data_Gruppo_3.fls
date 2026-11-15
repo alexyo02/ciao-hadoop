@@ -327,6 +327,12 @@ INPUT C:\Users\aless\AppData\Local\Programs\MiKTeX\fonts\tfm\public\cm\cmti12.tf
 INPUT C:\Users\aless\AppData\Local\Programs\MiKTeX\fonts\tfm\public\cm\cmr12.tfm
 INPUT C:\Users\aless\AppData\Local\Programs\MiKTeX\fonts\tfm\public\cm\cmti12.tfm
 INPUT C:\Users\aless\AppData\Local\Programs\MiKTeX\fonts\tfm\public\cm\cmcsc10.tfm
+OUTPUT Esonero_Big_Data_Gruppo_3.pdf
+INPUT C:\Users\aless\AppData\Local\MiKTeX\fonts\map\pdftex\pdftex.map
+INPUT .\Esonero_Big_Data_Gruppo_3.toc
+INPUT .\Esonero_Big_Data_Gruppo_3.toc
+INPUT Esonero_Big_Data_Gruppo_3.toc
+INPUT C:\Users\aless\AppData\Local\Programs\MiKTeX\fonts\tfm\public\cm\cmbx12.tfm
 INPUT C:\Users\aless\AppData\Local\Programs\MiKTeX\fonts\tfm\public\cm\cmr8.tfm
 INPUT C:\Users\aless\AppData\Local\Programs\MiKTeX\fonts\tfm\public\cm\cmr6.tfm
 INPUT C:\Users\aless\AppData\Local\Programs\MiKTeX\fonts\tfm\public\cm\cmmi12.tfm
@@ -335,12 +341,6 @@ INPUT C:\Users\aless\AppData\Local\Programs\MiKTeX\fonts\tfm\public\cm\cmmi6.tfm
 INPUT C:\Users\aless\AppData\Local\Programs\MiKTeX\fonts\tfm\public\cm\cmsy10.tfm
 INPUT C:\Users\aless\AppData\Local\Programs\MiKTeX\fonts\tfm\public\cm\cmsy8.tfm
 INPUT C:\Users\aless\AppData\Local\Programs\MiKTeX\fonts\tfm\public\cm\cmsy6.tfm
-OUTPUT Esonero_Big_Data_Gruppo_3.pdf
-INPUT C:\Users\aless\AppData\Local\MiKTeX\fonts\map\pdftex\pdftex.map
-INPUT .\Esonero_Big_Data_Gruppo_3.toc
-INPUT .\Esonero_Big_Data_Gruppo_3.toc
-INPUT Esonero_Big_Data_Gruppo_3.toc
-INPUT C:\Users\aless\AppData\Local\Programs\MiKTeX\fonts\tfm\public\cm\cmbx12.tfm
 OUTPUT Esonero_Big_Data_Gruppo_3.toc
 INPUT C:\Users\aless\AppData\Local\Programs\MiKTeX\fonts\tfm\public\cm\cmbx12.tfm
 INPUT C:\Users\aless\AppData\Local\Programs\MiKTeX\fonts\tfm\public\cm\cmti12.tfm
