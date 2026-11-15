@@ -8,14 +8,18 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
-public class DC_Driver {
+public class Job1_Driver {
 
     public static void main(String[] args) throws Exception {
 
         if (args.length != 2) {
-            System.err.println("Uso corretto: DC_Driver <input_path> <output_path>");
+            System.err.println("Uso corretto: Job1_Driver <input_path> <output_path>");
             System.exit(-1);
         }
+
+        // Memorizziamo l'istante iniziale per misurare
+        // il tempo complessivo di esecuzione del job.
+        long startTime = System.currentTimeMillis();
 
         Configuration conf = new Configuration();
         Job job = Job.getInstance(conf, "Job1_DislikeCounter");
@@ -34,6 +38,24 @@ public class DC_Driver {
         FileInputFormat.addInputPath(job, new Path(args[0]));
         FileOutputFormat.setOutputPath(job, new Path(args[1]));
 
-        System.exit(job.waitForCompletion(true) ? 0 : 1);
+        // Avviamo il job e attendiamo che termini.
+        boolean completato = job.waitForCompletion(true);
+
+        // Memorizziamo l'istante finale.
+        long endTime = System.currentTimeMillis();
+
+        // Calcoliamo la durata in millisecondi.
+        long executionTime = endTime - startTime;
+
+        // Stampiamo il tempo soltanto se il job è riuscito.
+        if (completato) {
+            System.out.println("Tempo di esecuzione: "
+                    + executionTime + " millisecondi");
+        } else {
+            System.err.println("Job 1 non completato: tempo non valido per il benchmark.");
+        }
+
+        // Restituiamo 0 in caso di successo e 1 in caso di errore.
+        System.exit(completato ? 0 : 1);
     }
 }
