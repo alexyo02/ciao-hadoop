@@ -1,0 +1,46 @@
+\babel@toc {italian}{}\relax 
+\babel@toc {italian}{}\relax 
+\contentsline {section}{\numberline {1}Job 1 - Individuazione dei video con un numero di dislike maggiore del numero di like}{3}{}%
+\contentsline {subsection}{\numberline {1.1}Obiettivo}{3}{}%
+\contentsline {subsection}{\numberline {1.2}Implementazione}{3}{}%
+\contentsline {subsubsection}{\numberline {1.2.1}Mapper}{3}{}%
+\contentsline {subsubsection}{\numberline {1.2.2}Reducer}{4}{}%
+\contentsline {subsubsection}{\numberline {1.2.3}Driver}{4}{}%
+\contentsline {subsection}{\numberline {1.3}Pseudocodice}{5}{}%
+\contentsline {subsubsection}{\numberline {1.3.1}Pseudocodice del Mapper}{5}{}%
+\contentsline {subsubsection}{\numberline {1.3.2}Pseudocodice del Reducer}{6}{}%
+\contentsline {subsubsection}{\numberline {1.3.3}Pseudocodice del Driver}{6}{}%
+\contentsline {subsection}{\numberline {1.4}Pipeline MapReduce}{7}{}%
+\contentsline {subsection}{\numberline {1.5}Risultati}{8}{}%
+\contentsline {subsubsection}{\numberline {1.5.1}Risultati del Dataset A}{9}{}%
+\contentsline {subsubsection}{\numberline {1.5.2}Risultati del Dataset B}{9}{}%
+\contentsline {subsubsection}{\numberline {1.5.3}Risultati del Dataset C}{9}{}%
+\contentsline {subsubsection}{\numberline {1.5.4}Confronto dei risultati}{9}{}%
+\contentsline {subsection}{\numberline {1.6}Analisi delle prestazioni}{10}{}%
+\contentsline {subsubsection}{\numberline {1.6.1}Esecuzione in modalita' Local}{11}{}%
+\contentsline {subsubsection}{\numberline {1.6.2}Esecuzione in modalita' Pseudo-distributed senza YARN}{11}{}%
+\contentsline {subsubsection}{\numberline {1.6.3}Esecuzione in modalita' Pseudo-distributed con YARN}{11}{}%
+\contentsline {subsubsection}{\numberline {1.6.4}Confronto delle configurazioni}{11}{}%
+\contentsline {subsubsection}{\numberline {1.6.5}Rappresentazione grafica delle prestazioni}{12}{}%
+\contentsline {section}{\numberline {2}Job 2 - Individuazione dei cinque canali Youtube con il maggior numero di video in tendenza}{13}{}%
+\contentsline {subsection}{\numberline {2.1}Obiettivo}{13}{}%
+\contentsline {subsection}{\numberline {2.2}Implementazione}{13}{}%
+\contentsline {subsubsection}{\numberline {2.2.1}Mapper}{14}{}%
+\contentsline {subsubsection}{\numberline {2.2.2}Reducer}{14}{}%
+\contentsline {subsubsection}{\numberline {2.2.3}Driver}{15}{}%
+\contentsline {subsection}{\numberline {2.3}Pseudocodice}{16}{}%
+\contentsline {subsubsection}{\numberline {2.3.1}Pseudocodice del Mapper}{16}{}%
+\contentsline {subsubsection}{\numberline {2.3.2}Pseudocodice del Reducer}{16}{}%
+\contentsline {subsubsection}{\numberline {2.3.3}Pseudocodice del Driver}{17}{}%
+\contentsline {subsection}{\numberline {2.4}Pipeline MapReduce}{18}{}%
+\contentsline {subsection}{\numberline {2.5}Risultati}{19}{}%
+\contentsline {subsubsection}{\numberline {2.5.1}Risultati del Dataset A}{20}{}%
+\contentsline {subsubsection}{\numberline {2.5.2}Risultati del Dataset B}{20}{}%
+\contentsline {subsubsection}{\numberline {2.5.3}Risultati del Dataset C}{20}{}%
+\contentsline {subsubsection}{\numberline {2.5.4}Confronto dei risultati}{20}{}%
+\contentsline {subsection}{\numberline {2.6}Analisi delle prestazioni}{20}{}%
+\contentsline {subsubsection}{\numberline {2.6.1}Esecuzione in modalita' Local}{21}{}%
+\contentsline {subsubsection}{\numberline {2.6.2}Esecuzione in modalita' Pseudo-distributed senza YARN}{21}{}%
+\contentsline {subsubsection}{\numberline {2.6.3}Esecuzione in modalita' Pseudo-distributed con YARN}{22}{}%
+\contentsline {subsubsection}{\numberline {2.6.4}Confronto delle configurazioni}{22}{}%
+\contentsline {subsubsection}{\numberline {2.6.5}Rappresentazione grafica delle prestazioni}{23}{}%

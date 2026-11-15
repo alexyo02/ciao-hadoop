@@ -2,6 +2,8 @@
 
 \usepackage[utf8]{inputenc}
 \usepackage[italian]{babel}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
 \usepackage{geometry}
 \geometry{top=3.5cm, bottom=3.5cm, left=2.5cm, right=2.5cm}
 
@@ -38,11 +40,11 @@
         \end{flushleft}
     \end{minipage}
     \hfill
-    \begin{minipage}{0.45\textwidth}
+    \begin{minipage}{0.55\textwidth}
         \begin{flushright} \large
             \emph{Studenti:}\\
             Alessio \textsc{Troisi} - Matr. 601812\\
-            Alice Maria \textsc{Patimo} - Matr. xxxxxx\\
+            Alice Maria \textsc{Patimo} - Matr. 603106\\
             Giovanni \textsc{Turi} - Matr. xxxxxx
         \end{flushright}
     \end{minipage}
@@ -52,5 +54,1660 @@
     %Anno Accademico
     {\large Novembre 2026 \par}
 \end{titlepage}
+
+% Indice generale del report
+\tableofcontents
+\newpage 
+
+\section{Job 1 - Individuazione dei video con un numero di dislike maggiore del numero di like}
+\subsection{Obiettivo}
+Il primo job ha l'obiettivo di individuare i titoli dei video per i quali il numero di \textit{dislike} è maggiore del numero di \textit{like}.
+L'analisi viene effettuata mediante il paradigma Hadoop MapReduce, attraverso tre componenti principali: Mapper, Reducer e Driver.
+Il programma considera i campi \texttt{title}, \texttt{likes} e \texttt{dislikes} presenti nei file CSV dei video in tendenza (\textit{trending videos}) e seleziona i record in cui il numero di dislike supera quello dei like.
+Uno stesso video può comparire tra i video in tendenza in giornate differenti e dare luogo a più record selezionati: il job restituisce ciascun titolo una sola volta, eliminando i duplicati.
+Come richiesto dalla traccia, per il Job 1 vengono riportati risultati parziali: l'elenco completo dei titoli è salvato nel file di output \texttt{part-r-00000}, mentre nel report sono riportati il numero di titoli individuati e alcuni esempi.
+
+\subsection{Implementazione}
+
+Il Job 1 è stato implementato attraverso tre classi Java:
+\texttt{Job1\_Mapper}, \texttt{Job1\_Reducer} e
+\texttt{Job1\_Driver}, utilizzando il framework
+Hadoop MapReduce.
+
+\subsubsection{Mapper}
+
+La classe \texttt{Job1\_Mapper} estende la classe
+\texttt{Mapper} del framework Hadoop e si occupa
+di selezionare, tra i record del dataset, quelli
+relativi a video con un numero di dislike
+maggiore del numero di like.
+
+Il Mapper riceve in ingresso coppie chiave-valore
+di tipo \texttt{LongWritable, Text}.
+
+La chiave, di tipo \texttt{LongWritable},
+rappresenta l'offset della riga all'interno del
+file di input, mentre il valore, di tipo
+\texttt{Text}, contiene il record del dataset.
+
+Per ciascun record, il Mapper esegue le
+seguenti operazioni:
+
+\begin{enumerate}
+    \item Converte il record ricevuto in una stringa.
+    \item Verifica che il record non corrisponda
+    all'intestazione del file CSV, riconosciuta dal
+    prefisso \texttt{video\_id,}.
+    \item Suddivide il record nei campi che lo
+    compongono mediante la classe di supporto
+    \texttt{CSV\_Parser}, che tiene conto delle virgole
+    eventualmente presenti nei campi racchiusi
+    tra virgolette.
+    \item Verifica che il record contenga almeno dieci
+    campi, quelli necessari per accedere alla colonna
+    \texttt{dislikes}; in caso contrario il record
+    viene scartato.
+    \item Estrae il campo \texttt{title} (indice 2),
+    il campo \texttt{likes} (indice 8) e il campo
+    \texttt{dislikes} (indice 9).
+    \item Converte i valori di \texttt{likes} e
+    \texttt{dislikes} in numeri interi di tipo
+    \texttt{long}, dopo aver eliminato gli spazi iniziali
+    e finali; i record per i quali la conversione
+    non è possibile vengono ignorati.
+    \item Confronta i due valori: se il numero di dislike
+    è maggiore del numero di like, emette
+    il titolo del video come chiave.
+\end{enumerate}
+
+L'output del Mapper è quindi costituito da
+coppie di tipo \texttt{Text, NullWritable},
+nella forma:
+
+\begin{center}
+    \texttt{(TitoloVideo, null)}
+\end{center}
+
+Il valore associato alla chiave non è significativo,
+poiché l'obiettivo del job consiste nell'ottenere
+l'insieme dei titoli e non un valore numerico
+a essi associato.
+
+Il Mapper svolge quindi una funzione di filtro:
+dei record letti viene emesso soltanto
+il sottoinsieme che soddisfa la condizione
+\texttt{dislikes > likes}.
+
+\subsubsection{Reducer}
+
+La classe \texttt{Job1\_Reducer} estende la classe
+\texttt{Reducer} del framework Hadoop e ha il compito
+di produrre l'elenco dei titoli dei video selezionati,
+scrivendo ciascun titolo una sola volta.
+
+Il Reducer riceve in ingresso coppie chiave-valore
+di tipo \texttt{Text, NullWritable}, raggruppate
+automaticamente dal framework Hadoop durante le
+fasi di Shuffle e Sort.
+
+La chiave rappresenta il titolo di un video, mentre
+la sequenza dei valori contiene un elemento per ciascun
+record selezionato dal Mapper con quel titolo.
+
+Un video presente tra i video in tendenza in più
+giornate, con dislike superiori ai like, genera
+più record e quindi più coppie con la stessa chiave.
+Il framework le raggruppa in un unico gruppo,
+e il metodo \texttt{reduce()} scrive la chiave
+una sola volta, ignorando la molteplicità dei valori.
+
+In questo modo il Reducer elimina i duplicati
+senza ricorrere a strutture dati ausiliarie:
+la deduplicazione si basa sul raggruppamento
+per chiave effettuato dal framework.
+
+Poiché le chiavi vengono ordinate durante la fase
+di Sort, il file di output contiene i titoli
+in ordine alfabetico, secondo l'ordinamento
+dei byte del tipo \texttt{Text}.
+
+Le coppie chiave-valore prodotte dal Reducer
+sono di tipo \texttt{Text, NullWritable} e il file
+di output contiene un titolo per riga.
+
+\subsubsection{Driver}
+
+La classe \texttt{Job1\_Driver} rappresenta il punto
+di ingresso del programma e si occupa della
+configurazione e dell'avvio del job MapReduce.
+
+All'interno del metodo \texttt{main()} viene
+inizialmente creato un oggetto \texttt{Configuration},
+contenente le proprietà di configurazione di Hadoop.
+
+Successivamente, attraverso il metodo
+\texttt{Job.getInstance()}, viene istanziato
+il job, al quale viene assegnato il nome
+\texttt{Job1\_DislikeCounter}.
+
+Il Driver associa al job le classi
+\texttt{Job1\_Mapper} e \texttt{Job1\_Reducer}
+mediante i metodi \texttt{setMapperClass()}
+e \texttt{setReducerClass()}.
+
+Vengono inoltre specificati i tipi delle
+coppie chiave-valore prodotte dal Mapper
+e dal Reducer, utilizzando le classi
+\texttt{Text} e \texttt{NullWritable}.
+
+Il Driver non imposta esplicitamente il numero
+di Reducer: viene quindi utilizzato il valore
+di default, pari a uno, come confermato dai log
+di esecuzione (\texttt{Launched reduce tasks=1}).
+In questo modo tutti i titoli convergono
+verso lo stesso Reducer, che produce
+un unico file di output ordinato
+e privo di duplicati.
+
+Non viene impiegato un Combiner, come mostrato
+dai contatori del job (\texttt{Combine input records=0}).
+
+I percorsi di input e output vengono
+specificati tramite i metodi
+\texttt{FileInputFormat.addInputPath()}
+e \texttt{FileOutputFormat.setOutputPath()}.
+
+L'esecuzione del job viene avviata mediante
+il metodo \texttt{waitForCompletion(true)},
+che attende il completamento delle
+operazioni MapReduce.
+
+Per valutare le prestazioni nelle diverse
+configurazioni Hadoop, il Driver misura
+il tempo complessivo di esecuzione
+utilizzando il metodo
+\texttt{System.currentTimeMillis()}.
+
+Il tempo viene calcolato come differenza
+tra l'istante finale e quello iniziale
+ed espresso in millisecondi.
+
+La misurazione comprende le operazioni
+di configurazione, avvio ed esecuzione
+del job fino al suo completamento.
+
+\subsection{Pseudocodice}
+
+In questa sezione viene presentato lo pseudocodice
+delle tre componenti del Job 1, per descrivere
+le principali operazioni eseguite durante
+l'elaborazione dei dati.
+
+\subsubsection{Pseudocodice del Mapper}
+
+\begin{verbatim}
+CLASS Job1_Mapper EXTENDS Mapper
+
+    FUNCTION map(key, value, context)
+
+        line = CONVERT value TO String
+
+        IF line IS CSV HEADER
+            RETURN
+        END IF
+
+        fields = PARSE CSV line
+                 respecting quoted fields
+
+        IF number of fields <= 9
+            RETURN
+        END IF
+
+        title = fields[2]
+
+        TRY
+            likes    = PARSE LONG TRIM(fields[8])
+            dislikes = PARSE LONG TRIM(fields[9])
+        ON NumberFormatException
+            RETURN
+        END TRY
+
+        IF dislikes > likes
+
+            EMIT (title, NULL)
+
+        END IF
+
+    END FUNCTION
+
+END CLASS
+\end{verbatim}
+
+\subsubsection{Pseudocodice del Reducer}
+
+\begin{verbatim}
+CLASS Job1_Reducer EXTENDS Reducer
+
+    FUNCTION reduce(key, values, context)
+
+        // key = video title
+        // values = one NULL for each selected record
+
+        EMIT (key, NULL)
+
+    END FUNCTION
+
+END CLASS
+\end{verbatim}
+
+\subsubsection{Pseudocodice del Driver}
+
+\begin{verbatim}
+CLASS Job1_Driver
+
+    FUNCTION main(args)
+
+        IF number of arguments != 2
+            PRINT usage message
+            EXIT WITH ERROR
+        END IF
+
+        startTime = CURRENT_TIME_MILLIS()
+
+        conf = NEW Configuration()
+
+        job = CREATE Job(conf, "Job1_DislikeCounter")
+
+        SET job JAR class = Job1_Driver
+        SET job Mapper class = Job1_Mapper
+        SET job Reducer class = Job1_Reducer
+
+        SET Mapper output types = (Text, NullWritable)
+        SET Reducer output types = (Text, NullWritable)
+
+        SET input path = args[0]
+        SET output path = args[1]
+
+        completed = EXECUTE job AND WAIT
+
+        endTime = CURRENT_TIME_MILLIS()
+        executionTime = endTime - startTime
+
+        IF completed
+            PRINT executionTime
+            EXIT SUCCESSFULLY
+        ELSE
+            PRINT error message
+            EXIT WITH ERROR
+        END IF
+
+    END FUNCTION
+
+END CLASS
+\end{verbatim}
+
+\subsection{Pipeline MapReduce}
+
+La pipeline del Job 1 descrive le operazioni
+attraverso le quali i record dei dataset YouTube
+vengono elaborati per individuare i titoli
+dei video con un numero di dislike
+maggiore del numero di like.
+
+Il processo si articola nelle seguenti fasi:
+
+\begin{enumerate}
+
+    \item \textbf{Lettura dei dati di input.}
+
+    Hadoop legge i file CSV contenenti i video
+    in tendenza e suddivide i dati in porzioni
+    denominate \textit{input split}.
+
+    I record vengono forniti ai Mapper sotto forma
+    di coppie chiave-valore, dove la chiave
+    rappresenta l'offset del record nel file
+    e il valore contiene la riga del dataset.
+
+    \item \textbf{Fase di Map.}
+
+    Il Mapper estrae da ciascun record valido
+    il titolo, il numero di like e il numero
+    di dislike del video.
+
+    Se il numero di dislike è maggiore del numero
+    di like, viene emessa una coppia chiave-valore
+    nella forma \texttt{(TitoloVideo, null)}.
+    In caso contrario il record viene scartato.
+
+    \item \textbf{Fase di Shuffle e Sort.}
+
+    Il framework Hadoop raggruppa automaticamente
+    le coppie prodotte dai Mapper in base
+    alla chiave, associando a ciascun titolo
+    la sequenza dei valori emessi.
+
+    Ad esempio, se lo stesso titolo viene
+    selezionato in tre record differenti
+    (ad esempio in tre giornate diverse), si ottiene:
+
+    \begin{center}
+        \texttt{(TitoloA, [null, null, null])}
+    \end{center}
+
+    Le chiavi vengono inoltre ordinate.
+
+    \item \textbf{Fase di Reduce.}
+
+    Per ciascun gruppo, il Reducer scrive
+    il titolo una sola volta, indipendentemente
+    dal numero di record selezionati
+    che lo riguardano.
+
+    \item \textbf{Produzione dell'output.}
+
+    Il risultato viene scritto nel file
+    \texttt{part-r-00000}, con un titolo per riga,
+    in ordine alfabetico e senza duplicati.
+
+\end{enumerate}
+
+L'impiego di un unico Reducer permette
+di ottenere un unico file di output
+relativo a tutti i record dei file CSV
+presenti nel gruppo di dataset analizzato.
+
+\subsection{Risultati}
+
+Il Job 1 è stato eseguito considerando tre gruppi
+di dataset, caratterizzati da un numero crescente
+di Paesi e di file CSV.
+
+I gruppi analizzati sono:
+
+\begin{itemize}
+    \item \textbf{Dataset A}: Stati Uniti (US),
+    Regno Unito (GB) e Germania (DE).
+
+    \item \textbf{Dataset B}: dataset A,
+    Canada (CA), Francia (FR) e Russia (RU).
+
+    \item \textbf{Dataset C}: dataset B,
+    Messico (MX), Corea del Sud (KR),
+    Giappone (JP) e India (IN).
+\end{itemize}
+
+Per ciascun gruppo sono stati individuati
+i titoli dei video con un numero di dislike
+maggiore del numero di like.
+
+I risultati sono rimasti invariati nelle
+tre configurazioni Hadoop considerate.
+
+Come richiesto dalla traccia, i risultati
+del Job 1 sono presentati in forma parziale:
+per ciascun gruppo vengono riportati
+i valori dei contatori del job e alcuni
+titoli di esempio, mentre l'elenco completo
+è contenuto nel file di output.
+
+\subsubsection{Risultati del Dataset A}
+
+Il Dataset A comprende 3 file CSV.
+Il job ha letto 139453 righe di input e ha selezionato 1690 record,
+pari a circa l'1,21\% del totale.
+Questi record corrispondono a 623 titoli distinti.
+
+\begin{center}
+\small
+\begin{tabular}{|p{0.85\textwidth}|}
+\hline
+\textbf{Titolo del video (esempi)} \\
+\hline
+2 Grande Vanilla Lowfat Latte to Go \\
+Amy Schumer Goes Behind the Scenes at SNL \\
+Amy Schumer Is Ready to Host the Best SNL Yet \\
+Anita Latifi - Bleib so (Official Video) \\
+Anne Will: Wie antisemitisch ist Deutschland heute ? \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsubsection{Risultati del Dataset B}
+
+Il Dataset B comprende 6 file CSV.
+Il job ha letto 278026 righe di input e ha selezionato 4464 record,
+pari a circa l'1,61\% del totale.
+Questi record corrispondono a 2748 titoli distinti.
+
+\begin{center}
+\small
+\begin{tabular}{|p{0.85\textwidth}|}
+\hline
+\textbf{Titolo del video (esempi)} \\
+\hline
+20 second video \\
+A Wardrobe Malfunction Might Cost This Team An Olympic Gold Medal \\
+A new Aeroplan \\
+ABC cancels 'Roseanne' after Barr's racist tweet \\
+Affaire Maëlys : L'avocat de Nordahl Lelandais s'exprime \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsubsection{Risultati del Dataset C}
+
+Il Dataset C comprende 10 file CSV.
+Il job ha letto 419221 righe di input e ha selezionato 6886 record,
+pari a circa l'1,64\% del totale.
+Questi record corrispondono a 4145 titoli distinti.
+
+\begin{center}
+\small
+\begin{tabular}{|p{0.85\textwidth}|}
+\hline
+\textbf{Titolo del video (esempi)} \\
+\hline
+ASI SE BAILA EL VALS EN EL 2018 \\
+Accidente en la carretera México - Puebla, deja tres fallecidos \\
+Actress Sri Reddy Reacts On Pawan Kalyan Comment \\
+Anchor Pradeep's appeal against drunk driving! - TV9 Now \\
+Anupama Married! Who is Her Husband? \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsubsection{Confronto dei risultati}
+
+Le grandezze osservate nei tre gruppi di dataset
+sono riassunte nella Tabella~\ref{tab:job1risultati}.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{|l|r|r|r|}
+\hline
+\textbf{Grandezza} &
+\textbf{A} &
+\textbf{B} &
+\textbf{C} \\
+\hline
+Righe lette (\textit{Map input}) & 139453 & 278026 & 419221 \\
+Record selezionati (\textit{Map output}) & 1690 & 4464 & 6886 \\
+Titoli distinti (output del job) & 623 & 2748 & 4145 \\
+\hline
+\end{tabular}
+\caption{Risultati del Job 1 nei tre gruppi di dataset.}
+\label{tab:job1risultati}
+\end{table}
+
+Il numero di righe lette è superiore al numero
+di record effettivi dei file CSV, perché il campo
+\texttt{description} può contenere ritorni a capo:
+\texttt{TextInputFormat} legge ogni riga fisica come
+un valore distinto e suddivide quindi un record
+logico in più righe.
+Le righe frammento non hanno in genere la struttura
+attesa e vengono scartate dal controllo sul numero
+di campi o dalla conversione numerica.
+
+Dal confronto emerge che l'elenco dei titoli
+individuati nel Dataset A è interamente contenuto
+in quello del Dataset B, che a sua volta è contenuto
+in quello del Dataset C.
+Questo risultato è coerente con la definizione dei gruppi,
+ciascuno dei quali comprende il precedente.
+
+L'aggiunta di nuovi Paesi aumenta quindi
+il numero di titoli individuati: si passa
+da 623 titoli nel Dataset A a 2748 nel Dataset B
+e a 4145 nel Dataset C.
+
+La percentuale di record selezionati
+rimane contenuta in tutti e tre i gruppi,
+tra l'1,21\% e l'1,64\%: i video con più
+dislike che like costituiscono quindi
+una piccola frazione dei record in tendenza.
+
+In tutti e tre i gruppi il numero di record selezionati
+è maggiore del numero di titoli distinti
+(ad esempio 1690 contro 623 nel Dataset A).
+Questo conferma che numerosi video compaiono
+tra i video in tendenza in più giornate
+e che la deduplicazione svolta dal Reducer
+è necessaria per ottenere un elenco di titoli.
+
+\subsection{Analisi delle prestazioni}
+
+Per valutare le prestazioni del Job 1, il programma
+è stato eseguito utilizzando tre differenti
+configurazioni del framework Hadoop:
+
+\begin{itemize}
+    \item \textbf{Local}: elaborazione dei dati
+    sul filesystem locale, senza utilizzare
+    HDFS e YARN.
+
+    \item \textbf{Pseudo-distributed senza YARN}:
+    memorizzazione dei dati su HDFS ed esecuzione
+    di MapReduce mediante il framework locale.
+
+    \item \textbf{Pseudo-distributed con YARN}:
+    utilizzo di HDFS per la memorizzazione dei dati
+    e di YARN per la gestione delle risorse
+    e l'esecuzione dei job.
+\end{itemize}
+
+Per ciascuna configurazione sono stati
+considerati i tre gruppi di dataset A, B e C,
+caratterizzati da un numero crescente di Paesi.
+
+Ogni combinazione di configurazione e dataset
+è stata eseguita una volta, per un totale
+di 9 esecuzioni.
+
+I tempi sono stati misurati attraverso
+il metodo \texttt{System.currentTimeMillis()},
+registrando la differenza tra l'istante
+finale e quello iniziale del job
+e sono espressi in millisecondi.
+
+Poiché per ciascuna combinazione è disponibile
+una sola misurazione, non viene calcolato
+un tempo medio e i valori riportati
+nelle tabelle sono i tempi delle singole esecuzioni.
+
+\subsubsection{Esecuzione in modalita' Local}
+
+I tempi ottenuti nella configurazione
+Local sono riportati nella
+Tabella~\ref{tab:job1local}.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{|l|r|r|r|}
+\hline
+\textbf{Esecuzione} &
+\textbf{A (ms)} &
+\textbf{B (ms)} &
+\textbf{C (ms)} \\
+\hline
+Singola & 3818 & 4627 & 5781 \\
+\hline
+\end{tabular}
+\caption{Tempi di esecuzione del Job 1
+in modalita' Local.}
+\label{tab:job1local}
+\end{table}
+
+In questa modalita' il framework ha suddiviso
+i dati di input in 6, 13 e 19 \textit{split}
+rispettivamente per i dataset A, B e C
+(\textit{number of splits} riportato nei log).
+
+\subsubsection{Esecuzione in modalita'
+Pseudo-distributed senza YARN}
+
+In questa configurazione, i file CSV
+sono stati caricati nel filesystem
+distribuito HDFS.
+
+Il job è stato eseguito utilizzando
+il framework MapReduce locale,
+senza ricorrere al gestore di risorse YARN.
+
+I tempi ottenuti sono riportati nella
+Tabella~\ref{tab:job1pd}.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{|l|r|r|r|}
+\hline
+\textbf{Esecuzione} &
+\textbf{A (ms)} &
+\textbf{B (ms)} &
+\textbf{C (ms)} \\
+\hline
+Singola & 4055 & 5134 & 7056 \\
+\hline
+\end{tabular}
+\caption{Tempi di esecuzione del Job 1
+in modalita' Pseudo-distributed senza YARN.}
+\label{tab:job1pd}
+\end{table}
+
+Con i dati su HDFS i task di Map sono stati
+3, 6 e 10 rispettivamente per i dataset A, B e C.
+
+\subsubsection{Esecuzione in modalita'
+Pseudo-distributed con YARN}
+
+Nella terza configurazione sono stati
+utilizzati sia HDFS sia YARN.
+
+HDFS è stato impiegato per la
+memorizzazione dei dataset, mentre
+YARN ha gestito l'assegnazione delle risorse
+e l'esecuzione dei task MapReduce.
+
+I tempi ottenuti sono riportati nella
+Tabella~\ref{tab:job1yarn}.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{|l|r|r|r|}
+\hline
+\textbf{Esecuzione} &
+\textbf{A (ms)} &
+\textbf{B (ms)} &
+\textbf{C (ms)} \\
+\hline
+Singola & 67543 & 21952 & 43120 \\
+\hline
+\end{tabular}
+\caption{Tempi di esecuzione del Job 1
+in modalita' Pseudo-distributed con YARN.}
+\label{tab:job1yarn}
+\end{table}
+
+Anche in questa configurazione sono stati lanciati
+3, 6 e 10 task di Map, ciascuno eseguito
+in modo \textit{data-local}, oltre a un solo task di Reduce.
+
+\subsubsection{Confronto delle configurazioni}
+
+Per confrontare direttamente le prestazioni
+delle tre configurazioni Hadoop, nella
+Tabella~\ref{tab:job1confronto}
+sono riportati i tempi di esecuzione.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{|l|r|r|r|}
+\hline
+\textbf{Modalita'} &
+\textbf{A (ms)} &
+\textbf{B (ms)} &
+\textbf{C (ms)} \\
+\hline
+Local & 3818 & 4627 & 5781 \\
+PD senza YARN & 4055 & 5134 & 7056 \\
+PD con YARN & 67543 & 21952 & 43120 \\
+\hline
+\end{tabular}
+\caption{Confronto dei tempi di esecuzione
+del Job 1.}
+\label{tab:job1confronto}
+\end{table}
+
+Dall'analisi dei risultati emerge che,
+nell'ambiente sperimentale considerato,
+la configurazione con YARN ha richiesto
+tempi sensibilmente superiori
+rispetto alle altre due modalita'
+per tutti i gruppi di dataset.
+
+Le configurazioni Local e Pseudo-distributed
+senza YARN hanno presentato tempi contenuti
+e vicini tra loro: la modalita' Local è risultata
+la più veloce in tutti e tre i casi, con scarti
+della modalita' Pseudo-distributed senza YARN pari
+a circa il 6\% per il Dataset A, l'11\% per il Dataset B
+e il 22\% per il Dataset C.
+
+In entrambe queste configurazioni il tempo
+cresce al crescere della quantità di dati
+elaborati, passando dal Dataset A al Dataset C.
+
+Nella configurazione con YARN l'andamento
+non è invece monotono: il Dataset A, il più piccolo,
+ha richiesto il tempo più elevato
+(67543 millisecondi), mentre per i Dataset B e C
+sono stati misurati rispettivamente
+21952 e 43120 millisecondi.
+
+I contatori di YARN mostrano che il tempo
+complessivo impiegato dai task di Map
+è stato di circa 142 secondi per il Dataset A
+(3 task), di circa 42 secondi per il Dataset B
+(6 task) e di circa 86 secondi per il Dataset C
+(10 task).
+
+Si osserva inoltre che il Dataset A è stato
+il primo job eseguito dopo l'avvio dei servizi
+HDFS e YARN.
+Questa circostanza potrebbe aver influenzato
+il tempo misurato, ad esempio per
+l'inizializzazione dei processi e dei contenitori,
+ma le sole misurazioni temporali non consentono
+di identificare con certezza le cause di tale differenza.
+
+Poiché è disponibile una sola esecuzione
+per ciascuna combinazione, non è possibile
+valutare la variabilità delle misure
+tra ripetizioni: i valori vanno quindi interpretati
+come indicativi e riferiti all'ambiente sperimentale
+considerato, costituito da una singola
+macchina virtuale.
+
+I risultati evidenziano comunque che
+le prestazioni dipendono non soltanto
+dalla quantità di dati elaborati,
+ma anche dalla configurazione
+del framework e dalle condizioni
+dell'ambiente di esecuzione.
+
+In tutti gli esperimenti sono stati
+utilizzati lo stesso algoritmo MapReduce
+e gli stessi dataset per ciascun gruppo,
+modificando esclusivamente la modalita'
+di esecuzione.
+
+La correttezza funzionale del job
+è stata verificata confrontando i risultati
+prodotti nelle tre configurazioni,
+che sono risultati coincidenti:
+per ciascun gruppo di dataset i file
+di output sono identici.
+
+\subsubsection{Rappresentazione grafica delle prestazioni}
+
+Per visualizzare il confronto tra le tre configurazioni
+Hadoop, la Figura~\ref{fig:job1tempi} riporta
+i tempi di esecuzione del Job 1
+per i dataset A, B e C.
+
+\begin{figure}[!htbp]
+\centering
+
+\begin{tikzpicture}
+\begin{axis}[
+    ybar,
+    width=0.95\textwidth,
+    height=8cm,
+    bar width=12pt,
+    ylabel={Tempo (ms)},
+    xlabel={Gruppo di dataset},
+    symbolic x coords={A,B,C},
+    xtick=data,
+    ymin=0,
+    enlarge x limits=0.25,
+    legend style={
+        at={(0.5,-0.20)},
+        anchor=north,
+        font=\footnotesize,
+        cells={anchor=west},
+        legend columns=1
+    },
+    grid=major,
+    grid style={dashed,gray!30}
+]
+
+\addplot coordinates {
+    (A,3818)
+    (B,4627)
+    (C,5781)
+};
+
+\addplot coordinates {
+    (A,4055)
+    (B,5134)
+    (C,7056)
+};
+
+\addplot coordinates {
+    (A,67543)
+    (B,21952)
+    (C,43120)
+};
+
+\legend{
+    Local,
+    Pseudo-distributed senza YARN,
+    Pseudo-distributed con YARN
+}
+
+\end{axis}
+\end{tikzpicture}
+
+\caption{Confronto dei tempi di esecuzione
+del Job 1 nelle tre configurazioni Hadoop.}
+\label{fig:job1tempi}
+
+\end{figure}
+
+Dal grafico emerge che la configurazione
+Pseudo-distributed con YARN presenta
+tempi di esecuzione maggiori
+rispetto alle altre due configurazioni
+per tutti i gruppi di dataset.
+
+Le configurazioni Local e Pseudo-distributed
+senza YARN mostrano invece tempi
+relativamente vicini, con un andamento
+crescente al crescere del numero di Paesi considerati.
+
+Tale comportamento deve essere interpretato
+nel contesto dell'ambiente sperimentale
+utilizzato, costituito da una singola
+macchina virtuale.
+
+\section{Job 2 - Individuazione dei  cinque canali Youtube con il maggior numero di video in tendenza}
+\subsection{Obiettivo}
+Il secondo job ha l'obiettivo di individuare i cinque canali Youtube che presentano il maggior numero di occorrenze all'interno dei dataset relativi ai video in tendenza (\textit{trending videos}).
+L'analisi viene effettuata mediante il paradigma Hadoop MapReduce, attraverso tre componenti principali: Mapper, Reducer e Driver.
+Il programma considera il campo \texttt{channel\_title} presente nei file CSV e determina il numero di record associati a ciascun canale. Successivamente, seleziona i cinque canali con il maggior numero di occorrenze.
+Il conteggio si riferisce ai record del dataset: pertanto, uno stesso video presente tra i video in tendenza in giornate differenti viene conteggiato più volte.
+
+\subsection{Implementazione}
+
+Il Job 2 è stato implementato attraverso tre classi Java:
+\texttt{Job2\_Mapper}, \texttt{Job2\_Reducer} e
+\texttt{Job2\_Driver}, utilizzando il framework
+Hadoop MapReduce.
+
+\subsubsection{Mapper}
+
+La classe \texttt{Job2\_Mapper} estende la classe
+\texttt{Mapper} del framework Hadoop e si occupa
+di estrarre, da ogni record del dataset, il nome
+del canale YouTube associato al video.
+
+Il Mapper riceve in ingresso coppie chiave-valore
+di tipo \texttt{LongWritable, Text}.
+
+La chiave, di tipo \texttt{LongWritable},
+rappresenta l'offset della riga all'interno del
+file di input, mentre il valore, di tipo
+\texttt{Text}, contiene il record del dataset.
+
+Per ciascun record, il Mapper esegue le
+seguenti operazioni:
+
+\begin{enumerate}
+    \item Converte il record ricevuto in una stringa.
+    \item Verifica che il record non corrisponda
+    all'intestazione del file CSV.
+    \item Suddivide il record nei campi che lo
+    compongono, tenendo conto delle virgole
+    eventualmente presenti nei campi racchiusi
+    tra virgolette.
+    \item Estrae il campo \texttt{channel\_title},
+    situato nella quarta colonna del dataset
+    (indice 3).
+    \item Verifica che il nome del canale
+    non sia vuoto.
+    \item Emette una coppia chiave-valore
+    costituita dal nome del canale e dal
+    valore intero 1.
+\end{enumerate}
+
+L'output del Mapper è quindi costituito da
+coppie di tipo \texttt{Text, IntWritable},
+nella forma:
+
+\begin{center}
+    \texttt{(NomeCanale, 1)}
+\end{center}
+
+Ogni coppia rappresenta una singola occorrenza
+del canale all'interno del dataset.
+
+Il valore 1 viene assegnato a ogni record valido
+indipendentemente dal numero di visualizzazioni
+del video, poiché l'obiettivo del job consiste
+nel conteggiare le occorrenze dei canali e non
+nell'analizzare le visualizzazioni.
+
+\subsubsection{Reducer}
+
+La classe \texttt{Job2\_Reducer} estende la classe
+\texttt{Reducer} del framework Hadoop e ha il compito
+di determinare i cinque canali YouTube con il maggior
+numero di occorrenze nel dataset.
+
+Il Reducer riceve in ingresso coppie chiave-valore
+di tipo \texttt{Text, IntWritable}, raggruppate
+automaticamente dal framework Hadoop durante le
+fasi di Shuffle e Sort.
+
+La chiave rappresenta il nome di un canale YouTube,
+mentre i valori costituiscono una sequenza di interi
+uguali a 1, ciascuno associato a un record del dataset.
+
+Per ogni canale, il metodo \texttt{reduce()} somma
+i valori ricevuti, ottenendo il numero complessivo
+di occorrenze del canale.
+
+Per individuare i cinque canali con il maggior
+numero di occorrenze viene utilizzata una struttura
+dati \texttt{PriorityQueue}, che permette di mantenere
+in memoria soltanto i cinque risultati migliori.
+
+La coda viene ordinata in modo da mantenere
+in testa il canale con il conteggio minore
+tra quelli attualmente selezionati.
+
+Quando viene elaborato un nuovo canale,
+il suo conteggio viene confrontato con quello
+dell'elemento in testa alla coda.
+
+Se il nuovo conteggio è maggiore, il canale
+con il conteggio minore viene rimosso e
+sostituito con quello appena elaborato.
+
+In caso di parità di conteggio, viene considerato
+peggiore il canale che segue in ordine alfabetico;
+lo stesso criterio di spareggio è usato nel metodo
+\texttt{cleanup()} per ordinare l'output finale.
+
+Al termine dell'elaborazione, il metodo
+\texttt{cleanup()} ordina i cinque canali
+selezionati in ordine decrescente di occorrenze
+e li scrive nel file di output.
+
+Le coppie chiave-valore prodotte dal Reducer
+sono di tipo \texttt{Text, IntWritable}, nella forma:
+
+\begin{center}
+    \texttt{(NomeCanale, NumeroOccorrenze)}
+\end{center}
+
+Il risultato finale consiste quindi in cinque
+coppie chiave-valore, una per ciascuno dei
+canali YouTube maggiormente presenti tra
+i record dei video in tendenza.
+
+\subsubsection{Driver}
+
+La classe \texttt{Job2\_Driver} rappresenta il punto
+di ingresso del programma e si occupa della
+configurazione e dell'avvio del job MapReduce.
+
+All'interno del metodo \texttt{main()} viene
+inizialmente creato un oggetto \texttt{Configuration},
+contenente le proprietà di configurazione di Hadoop.
+
+Successivamente, attraverso il metodo
+\texttt{Job.getInstance()}, viene istanziato
+il job, al quale viene assegnato il nome
+\texttt{Job2\_TopChannels}.
+
+Il Driver associa al job le classi
+\texttt{Job2\_Mapper} e \texttt{Job2\_Reducer}
+mediante i metodi \texttt{setMapperClass()}
+e \texttt{setReducerClass()}.
+
+Vengono inoltre specificati i tipi delle
+coppie chiave-valore prodotte dal Mapper
+e dal Reducer, utilizzando le classi
+\texttt{Text} e \texttt{IntWritable}.
+
+Il numero di Reducer viene impostato a uno,
+mediante il metodo \texttt{setNumReduceTasks(1)},
+in modo che tutti i conteggi dei canali
+convergano verso un unico Reducer.
+
+Questa scelta permette di determinare
+una classifica globale dei cinque canali
+più frequenti, considerando l'intero
+insieme dei dati di ingresso.
+
+I percorsi di input e output vengono
+specificati tramite i metodi
+\texttt{FileInputFormat.addInputPath()}
+e \texttt{FileOutputFormat.setOutputPath()}.
+
+L'esecuzione del job viene avviata mediante
+il metodo \texttt{waitForCompletion(true)},
+che attende il completamento delle
+operazioni MapReduce.
+
+Per valutare le prestazioni nelle diverse
+configurazioni Hadoop, il Driver misura
+il tempo complessivo di esecuzione
+utilizzando il metodo
+\texttt{System.currentTimeMillis()}.
+
+Il tempo viene calcolato come differenza
+tra l'istante finale e quello iniziale
+ed espresso in millisecondi.
+
+La misurazione comprende le operazioni
+di configurazione, avvio ed esecuzione
+del job fino al suo completamento.
+
+\subsection{Pseudocodice}
+
+In questa sezione viene presentato lo pseudocodice
+delle tre componenti del Job 2, per descrivere
+le principali operazioni eseguite durante
+l'elaborazione dei dati.
+
+\subsubsection{Pseudocodice del Mapper}
+
+\begin{verbatim}
+CLASS Job2_Mapper EXTENDS Mapper
+
+    FUNCTION map(key, value, context)
+
+        line = CONVERT value TO String
+
+        IF line IS CSV HEADER
+            RETURN
+        END IF
+
+        fields = PARSE CSV line
+                 respecting quoted fields
+
+        IF channel_title field EXISTS
+
+            channel = fields[3]
+
+            IF channel IS NOT EMPTY
+
+                EMIT (channel, 1)
+
+            END IF
+
+        END IF
+
+    END FUNCTION
+
+END CLASS
+\end{verbatim}
+
+\subsubsection{Pseudocodice del Reducer}
+
+\begin{verbatim}
+CLASS Job2_Reducer EXTENDS Reducer
+
+    INITIALIZE PriorityQueue top5
+    MAX_SIZE = 5
+
+    FUNCTION reduce(key, values, context)
+
+        count = 0
+
+        FOR EACH value IN values
+            count = count + value
+        END FOR
+
+        IF top5.size < MAX_SIZE
+
+            INSERT (key, count) INTO top5
+
+        ELSE IF (key, count) IS BETTER THAN
+                THE MINIMUM ELEMENT IN top5
+
+            REMOVE MINIMUM ELEMENT FROM top5
+            INSERT (key, count) INTO top5
+
+        END IF
+
+    END FUNCTION
+
+    FUNCTION cleanup(context)
+
+        SORT top5 BY count DESCENDING
+
+        FOR EACH element IN top5
+
+            EMIT (element.channel,
+                  element.count)
+
+        END FOR
+
+    END FUNCTION
+
+END CLASS
+\end{verbatim}
+
+\subsubsection{Pseudocodice del Driver}
+
+\begin{verbatim}
+CLASS Job2_Driver
+
+    FUNCTION main(args)
+
+        IF number of arguments != 2
+            PRINT usage message
+            EXIT WITH ERROR
+        END IF
+
+        startTime = CURRENT_TIME_MILLIS()
+
+        conf = NEW Configuration()
+
+        job = CREATE Job(conf, "Job2_TopChannels")
+
+        SET job JAR class = Job2_Driver
+        SET job Mapper class = Job2_Mapper
+        SET job Reducer class = Job2_Reducer
+
+        SET Mapper output types = (Text, IntWritable)
+        SET Reducer output types = (Text, IntWritable)
+
+        SET number of Reducers = 1
+
+        SET input path = args[0]
+        SET output path = args[1]
+
+        completed = EXECUTE job AND WAIT
+
+        endTime = CURRENT_TIME_MILLIS()
+        executionTime = endTime - startTime
+
+        IF completed
+            PRINT executionTime
+            EXIT SUCCESSFULLY
+        ELSE
+            PRINT error message
+            EXIT WITH ERROR
+        END IF
+
+    END FUNCTION
+
+END CLASS
+\end{verbatim}
+
+\subsection{Pipeline MapReduce}
+
+La pipeline del Job 2 descrive le operazioni
+attraverso le quali i record dei dataset YouTube
+vengono elaborati per individuare i cinque canali
+con il maggior numero di occorrenze.
+
+Il processo si articola nelle seguenti fasi:
+
+\begin{enumerate}
+
+    \item \textbf{Lettura dei dati di input.}
+
+    Hadoop legge i file CSV contenenti i video
+    in tendenza e suddivide i dati in porzioni
+    denominate \textit{input split}.
+
+    I record vengono forniti ai Mapper sotto forma
+    di coppie chiave-valore, dove la chiave
+    rappresenta l'offset del record nel file
+    e il valore contiene la riga del dataset.
+
+    \item \textbf{Fase di Map.}
+
+    Il Mapper estrae da ciascun record valido
+    il nome del canale YouTube, contenuto nel
+    campo \texttt{channel\_title}.
+
+    Per ogni canale individuato viene emessa
+    una coppia chiave-valore nella forma
+    \texttt{(NomeCanale, 1)}.
+
+    \item \textbf{Fase di Shuffle e Sort.}
+
+    Il framework Hadoop raggruppa automaticamente
+    le coppie prodotte dai Mapper in base
+    alla chiave, associando a ciascun canale
+    la sequenza dei valori interi emessi.
+
+    Ad esempio, tre occorrenze dello stesso
+    canale producono:
+
+    \begin{center}
+        \texttt{(CanaleA, [1, 1, 1])}
+    \end{center}
+
+    \item \textbf{Fase di Reduce.}
+
+    Per ciascun canale, il Reducer somma
+    i valori ricevuti, determinando il numero
+    totale di occorrenze nel dataset.
+
+    I conteggi vengono confrontati mediante
+    una \texttt{PriorityQueue}, che mantiene
+    i cinque canali con il maggior numero
+    di occorrenze.
+
+    \item \textbf{Produzione dell'output.}
+
+    Al termine dell'elaborazione, il metodo
+    \texttt{cleanup()} ordina i cinque canali
+    selezionati in ordine decrescente
+    rispetto al numero di occorrenze.
+
+    Il risultato viene scritto nel file
+    \texttt{part-r-00000}, sotto forma di
+    coppie \texttt{(NomeCanale, NumeroOccorrenze)}.
+
+\end{enumerate}
+
+L'impiego di un unico Reducer permette
+di ottenere una classifica globale,
+considerando tutti i record dei file CSV
+presenti nel gruppo di dataset analizzato.
+
+\subsection{Risultati}
+
+Il Job 2 è stato eseguito considerando tre gruppi
+di dataset, caratterizzati da un numero crescente
+di Paesi e di file CSV.
+
+I gruppi analizzati sono:
+
+\begin{itemize}
+    \item \textbf{Dataset A}: Stati Uniti (US),
+    Regno Unito (GB) e Germania (DE).
+
+    \item \textbf{Dataset B}: dataset A,
+    Canada (CA), Francia (FR) e Russia (RU).
+
+    \item \textbf{Dataset C}: dataset B,
+    Messico (MX), Corea del Sud (KR),
+    Giappone (JP) e India (IN).
+\end{itemize}
+
+Per ciascun gruppo sono stati individuati
+i cinque canali YouTube con il maggior
+numero di occorrenze nei record dei video
+in tendenza.
+
+I risultati sono rimasti invariati nelle
+tre configurazioni Hadoop considerate.
+
+\subsubsection{Risultati del Dataset A}
+
+\begin{center}
+\begin{tabular}{|l|r|}
+\hline
+\textbf{Canale YouTube} & \textbf{Occorrenze} \\
+\hline
+The Late Show with Stephen Colbert & 502 \\
+The Tonight Show Starring Jimmy Fallon & 484 \\
+Late Night with Seth Meyers & 475 \\
+TheEllenShow & 473 \\
+Jimmy Kimmel Live & 465 \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsubsection{Risultati del Dataset B}
+
+\begin{center}
+\begin{tabular}{|l|r|}
+\hline
+\textbf{Canale YouTube} & \textbf{Occorrenze} \\
+\hline
+The Late Show with Stephen Colbert & 779 \\
+Late Night with Seth Meyers & 692 \\
+TheEllenShow & 660 \\
+The Tonight Show Starring Jimmy Fallon & 653 \\
+Jimmy Kimmel Live & 636 \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsubsection{Risultati del Dataset C}
+
+\begin{center}
+\begin{tabular}{|l|r|}
+\hline
+\textbf{Canale YouTube} & \textbf{Occorrenze} \\
+\hline
+The Late Show with Stephen Colbert & 984 \\
+WWE & 804 \\
+Late Night with Seth Meyers & 773 \\
+VikatanTV & 763 \\
+TheEllenShow & 743 \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsubsection{Confronto dei risultati}
+
+Dal confronto emerge che il canale
+\textit{The Late Show with Stephen Colbert}
+occupa la prima posizione in tutti e tre
+i gruppi di dataset.
+
+Passando dal Dataset A al Dataset B,
+i cinque canali presenti nella classifica
+rimangono gli stessi, ma cambiano
+alcune posizioni e aumentano le occorrenze.
+
+Nel Dataset C, invece, entrano nella
+classifica i canali \textit{WWE}
+e \textit{VikatanTV}, mentre non compaiono
+piu' tra i primi cinque
+\textit{The Tonight Show Starring Jimmy Fallon}
+e \textit{Jimmy Kimmel Live}.
+
+Questi risultati mostrano come
+l'ampliamento dei Paesi considerati
+possa modificare la classifica dei canali
+maggiormente presenti tra i video
+in tendenza.
+
+\subsection{Analisi delle prestazioni}
+
+Per valutare le prestazioni del Job 2, il programma
+è stato eseguito utilizzando tre differenti
+configurazioni del framework Hadoop:
+
+\begin{itemize}
+    \item \textbf{Local}: elaborazione dei dati
+    sul filesystem locale, senza utilizzare
+    HDFS e YARN.
+
+    \item \textbf{Pseudo-distributed senza YARN}:
+    memorizzazione dei dati su HDFS ed esecuzione
+    di MapReduce mediante il framework locale.
+
+    \item \textbf{Pseudo-distributed con YARN}:
+    utilizzo di HDFS per la memorizzazione dei dati
+    e di YARN per la gestione delle risorse
+    e l'esecuzione dei job.
+\end{itemize}
+
+Per ciascuna configurazione sono stati
+considerati i tre gruppi di dataset A, B e C,
+caratterizzati da un numero crescente di Paesi.
+
+Ogni combinazione di configurazione e dataset
+è stata eseguita tre volte, per un totale
+di 27 esecuzioni.
+
+I tempi sono stati misurati attraverso
+il metodo \texttt{System.currentTimeMillis()},
+registrando la differenza tra l'istante
+finale e quello iniziale del job.
+
+Per ciascuna combinazione è stato
+successivamente calcolato il tempo medio:
+
+\[
+T_{\mathrm{medio}} =
+\frac{T_1 + T_2 + T_3}{3}
+\]
+
+dove $T_1$, $T_2$ e $T_3$ rappresentano
+i tempi delle tre esecuzioni, espressi
+in millisecondi.
+
+\subsubsection{Esecuzione in modalita' Local}
+
+I tempi ottenuti nella configurazione
+Local sono riportati nella
+Tabella~\ref{tab:job2local}.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{|l|r|r|r|}
+\hline
+\textbf{Esecuzione} &
+\textbf{A (ms)} &
+\textbf{B (ms)} &
+\textbf{C (ms)} \\
+\hline
+Prima  & 3778 & 9959 & 6692 \\
+Seconda & 3738 & 6117 & 5810 \\
+Terza & 3660 & 4725 & 6994 \\
+\hline
+\textbf{Media} &
+\textbf{3725,33} &
+\textbf{6933,67} &
+\textbf{6498,67} \\
+\hline
+\end{tabular}
+\caption{Tempi di esecuzione del Job 2
+in modalita' Local.}
+\label{tab:job2local}
+\end{table}
+
+\subsubsection{Esecuzione in modalita'
+Pseudo-distributed senza YARN}
+
+In questa configurazione, i file CSV
+sono stati caricati nel filesystem
+distribuito HDFS.
+
+Il job è stato eseguito utilizzando
+il framework MapReduce locale,
+senza ricorrere al gestore di risorse YARN.
+
+I tempi ottenuti sono riportati nella
+Tabella~\ref{tab:job2pd}.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{|l|r|r|r|}
+\hline
+\textbf{Esecuzione} &
+\textbf{A (ms)} &
+\textbf{B (ms)} &
+\textbf{C (ms)} \\
+\hline
+Prima & 4939 & 5935 & 8863 \\
+Seconda & 4056 & 5924 & 8007 \\
+Terza & 7041 & 5885 & 7945 \\
+\hline
+\textbf{Media} &
+\textbf{5345,33} &
+\textbf{5914,67} &
+\textbf{8271,67} \\
+\hline
+\end{tabular}
+\caption{Tempi di esecuzione del Job 2
+in modalita' Pseudo-distributed senza YARN.}
+\label{tab:job2pd}
+\end{table}
+
+\subsubsection{Esecuzione in modalita'
+Pseudo-distributed con YARN}
+
+Nella terza configurazione sono stati
+utilizzati sia HDFS sia YARN.
+
+HDFS è stato impiegato per la
+memorizzazione dei dataset, mentre
+YARN ha gestito l'assegnazione delle risorse
+e l'esecuzione dei task MapReduce.
+
+I tempi ottenuti sono riportati nella
+Tabella~\ref{tab:job2yarn}.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{|l|r|r|r|}
+\hline
+\textbf{Esecuzione} &
+\textbf{A (ms)} &
+\textbf{B (ms)} &
+\textbf{C (ms)} \\
+\hline
+Prima & 20775 & 104519 & 64020 \\
+Seconda & 21258 & 37075 & 48819 \\
+Terza & 41638 & 33359 & 60653 \\
+\hline
+\textbf{Media} &
+\textbf{27890,33} &
+\textbf{58317,67} &
+\textbf{57830,67} \\
+\hline
+\end{tabular}
+\caption{Tempi di esecuzione del Job 2
+in modalita' Pseudo-distributed con YARN.}
+\label{tab:job2yarn}
+\end{table}
+
+\subsubsection{Confronto delle configurazioni}
+
+Per confrontare direttamente le prestazioni
+delle tre configurazioni Hadoop, nella
+Tabella~\ref{tab:job2confronto}
+sono riportati i tempi medi di esecuzione.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{|l|r|r|r|}
+\hline
+\textbf{Modalita'} &
+\textbf{A (ms)} &
+\textbf{B (ms)} &
+\textbf{C (ms)} \\
+\hline
+Local & 3725,33 & 6933,67 & 6498,67 \\
+PD senza YARN & 5345,33 & 5914,67 & 8271,67 \\
+PD con YARN & 27890,33 & 58317,67 & 57830,67 \\
+\hline
+\end{tabular}
+\caption{Confronto dei tempi medi
+di esecuzione del Job 2.}
+\label{tab:job2confronto}
+\end{table}
+
+Dall'analisi dei risultati emerge che,
+nell'ambiente sperimentale considerato,
+la configurazione con YARN ha richiesto
+tempi medi sensibilmente superiori
+rispetto alle altre due modalita'.
+
+La configurazione Local ha generalmente
+presentato tempi contenuti, mentre
+la modalita' Pseudo-distributed senza YARN
+ha mostrato prestazioni relativamente vicine
+a quelle dell'esecuzione locale.
+
+In particolare, per il Dataset B,
+la modalita' Pseudo-distributed senza YARN
+ha registrato un tempo medio inferiore
+rispetto alla modalita' Local.
+
+Si osserva inoltre una certa variabilita'
+tra le ripetizioni, particolarmente evidente
+nella configurazione con YARN.
+
+Ad esempio, per il Dataset B con YARN,
+la prima esecuzione ha richiesto
+104519 millisecondi, mentre la seconda
+e la terza hanno richiesto rispettivamente
+37075 e 33359 millisecondi.
+
+Tali differenze potrebbero essere influenzate
+dal carico della macchina virtuale,
+dalla disponibilita' delle risorse
+e dalle operazioni di inizializzazione
+e gestione dei processi Hadoop.
+
+Tuttavia, le sole misurazioni temporali
+non consentono di identificare con certezza
+le cause di queste variazioni.
+
+I risultati evidenziano quindi che
+le prestazioni dipendono non soltanto
+dalla quantita' di dati elaborati,
+ma anche dalla configurazione
+del framework e dalle condizioni
+dell'ambiente di esecuzione.
+
+In tutti gli esperimenti sono stati
+utilizzati lo stesso algoritmo MapReduce
+e gli stessi dataset per ciascun gruppo,
+modificando esclusivamente la modalita'
+di esecuzione.
+
+La correttezza funzionale del job
+è stata verificata confrontando i risultati
+prodotti nelle tre configurazioni,
+che sono risultati coincidenti.
+
+
+\subsubsection{Rappresentazione grafica delle prestazioni}
+
+Per visualizzare il confronto tra le tre configurazioni
+Hadoop, la Figura~\ref{fig:job2tempi} riporta
+i tempi medi di esecuzione del Job 2
+per i dataset A, B e C.
+
+\begin{figure}[!htbp]
+\centering
+
+\begin{tikzpicture}
+\begin{axis}[
+    ybar,
+    width=0.95\textwidth,
+    height=8cm,
+    bar width=12pt,
+    ylabel={Tempo medio (ms)},
+    xlabel={Gruppo di dataset},
+    symbolic x coords={A,B,C},
+    xtick=data,
+    ymin=0,
+    enlarge x limits=0.25,
+    legend style={
+        at={(0.5,-0.20)},
+        anchor=north,
+        font=\footnotesize,
+        cells={anchor=west},
+        legend columns=1
+    },
+    grid=major,
+    grid style={dashed,gray!30}
+]
+
+\addplot coordinates {
+    (A,3725.33)
+    (B,6933.67)
+    (C,6498.67)
+};
+
+\addplot coordinates {
+    (A,5345.33)
+    (B,5914.67)
+    (C,8271.67)
+};
+
+\addplot coordinates {
+    (A,27890.33)
+    (B,58317.67)
+    (C,57830.67)
+};
+
+\legend{
+    Local,
+    Pseudo-distributed senza YARN,
+    Pseudo-distributed con YARN
+}
+
+\end{axis}
+\end{tikzpicture}
+
+\caption{Confronto dei tempi medi di esecuzione
+del Job 2 nelle tre configurazioni Hadoop.}
+\label{fig:job2tempi}
+
+\end{figure}
+
+Dal grafico emerge che la configurazione
+Pseudo-distributed con YARN presenta
+tempi medi di esecuzione maggiori
+rispetto alle altre due configurazioni
+per tutti i gruppi di dataset.
+
+Le configurazioni Local e Pseudo-distributed
+senza YARN mostrano invece tempi
+relativamente vicini.
+
+Tale comportamento deve essere interpretato
+nel contesto dell'ambiente sperimentale
+utilizzato, costituito da una singola
+macchina virtuale.
 
 \end{document}
