@@ -51,9 +51,7 @@ public class Job2_Reducer extends Reducer<Text, IntWritable, Text, IntWritable> 
             new PriorityQueue<>(worstFirst);
 
     @Override
-    protected void reduce(Text key,
-                          Iterable<IntWritable> values,
-                          Context context)
+    protected void reduce(Text key, Iterable<IntWritable> values, Context context)
             throws IOException, InterruptedException {
 
         // Variabile utilizzata per contare le occorrenze

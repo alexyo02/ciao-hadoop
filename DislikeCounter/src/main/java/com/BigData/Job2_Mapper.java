@@ -9,11 +9,8 @@ import java.io.IOException;
 
 public class Job2_Mapper extends Mapper<LongWritable, Text, Text, IntWritable> {
 
-    // Costante che identifica la colonna contenente il nome del canale YouTube.
-    // Gli indici partono da 0, quindi la quarta colonna ha indice 3.
     private static final int CHANNEL_COLUMN = 3;
 
-    // Oggetto Text utilizzato per memorizzare il nome del canale.
     private Text keyColumn = new Text();
 
     // Oggetto IntWritable associato a ogni occorrenza del canale.
