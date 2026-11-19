@@ -1,5 +1,5 @@
 # Fdb version 4
-["pdflatex"] 1795090762.69033 "c:/Users/aless/Documents/Big Data/ciao-hadoop/Esonero_Big_Data_Gruppo_3/Esonero_Big_Data_Gruppo_3.tex" "Esonero_Big_Data_Gruppo_3.pdf" "Esonero_Big_Data_Gruppo_3" 1795090765.75412 0
+["pdflatex"] 1795098205.99208 "c:/Users/aless/Documents/Big Data/ciao-hadoop/Esonero_Big_Data_Gruppo_3/Esonero_Big_Data_Gruppo_3.tex" "Esonero_Big_Data_Gruppo_3.pdf" "Esonero_Big_Data_Gruppo_3" 1795098208.55402 0
   "../Esonero_Big_Data/src/main/java/com/BigData/CSV_Parser.java" 1795087268 968 57eadc617cd1639bf8dadb9645ecb828 ""
   "../Esonero_Big_Data/src/main/java/com/BigData/Job1_Driver.java" 1795087268 2576 944c0601e68b7ec2bd75110033a8825e ""
   "../Esonero_Big_Data/src/main/java/com/BigData/Job1_Mapper.java" 1795087268 1564 b7ff5c8739a7068f6a029efeb5cfdbf5 ""
@@ -10,10 +10,13 @@
   "../Esonero_Big_Data/src/main/java/com/BigData/Job3_Driver.java" 1795087268 3124 4f6dcdc18d6b23802c082992db00b445 ""
   "../Esonero_Big_Data/src/main/java/com/BigData/Job3_Mapper.java" 1795087268 4021 0e75416d802b6404640714c6bed0372c ""
   "../Esonero_Big_Data/src/main/java/com/BigData/Job3_Reducer.java" 1795087268 1564 1ba1d15e3620e4ddc81c7bb50a36bc60 ""
+  "../esegui_job.sh" 1795092979 1006 1833fd8bca70d2fd45ed7341d2c5ce1f ""
   "C:/Users/aless/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map" 1795089832 80909 eab91d9745dd2edfd62a31d53cd5fe15 ""
   "C:/Users/aless/AppData/Local/MiKTeX/fonts/pk/ljfour/jknappen/ec/dpi600/tcrm1200.pk" 1779039902 14064 9e633365074f5d7195cd3757ed682991 ""
+  "C:/Users/aless/AppData/Local/MiKTeX/fonts/pk/ljfour/jknappen/ec/dpi600/tctt1000.pk" 1795098101 9492 409b6392309ac974394f7a3ede71b29c ""
   "C:/Users/aless/AppData/Local/MiKTeX/miktex/data/le/pdftex/pdflatex.fmt" 1795088031 13407175 0b016c6dea47bbcfd407e666430f1692 ""
   "C:/Users/aless/AppData/Local/Programs/MiKTeX/fonts/tfm/jknappen/ec/tcrm1200.tfm" 993062508 1444 95ffe0f19b974d50849790c8225c7ef7 ""
+  "C:/Users/aless/AppData/Local/Programs/MiKTeX/fonts/tfm/jknappen/ec/tctt1000.tfm" 993062564 1284 ebe6f6da538d21a08b8f29b6479c4f22 ""
   "C:/Users/aless/AppData/Local/Programs/MiKTeX/fonts/tfm/public/cm/cmbx10.tfm" 1136765053 1328 c834bbb027764024c09d3d2bf908b5f0 ""
   "C:/Users/aless/AppData/Local/Programs/MiKTeX/fonts/tfm/public/cm/cmbx12.tfm" 1136765053 1324 c910af8c371558dc20f2d7822f66fe64 ""
   "C:/Users/aless/AppData/Local/Programs/MiKTeX/fonts/tfm/public/cm/cmcsc10.tfm" 1136765053 1300 63a6111ee6274895728663cf4b4e7e81 ""
@@ -195,10 +198,10 @@
   "C:/Users/aless/AppData/Local/Programs/MiKTeX/tex/latex/pgf/utilities/pgfrcs.sty" 1785614823 327 81c4d60bbfd94d6f902f43edce8f8091 ""
   "C:/Users/aless/AppData/Local/Programs/MiKTeX/tex/latex/pgfplots/pgfplots.sty" 1787749947 4904 ee78b44e85d6fccf08cd99370557481e ""
   "C:/Users/aless/AppData/Local/Programs/MiKTeX/tex/latex/xcolor/xcolor.sty" 1729265222 55384 b454dec21c2d9f45ec0b793f0995b992 ""
-  "Esonero_Big_Data_Gruppo_3.aux" 1795090765 16315 8321d1f745e7e750af3a4d82eb6c6a9d "pdflatex"
-  "Esonero_Big_Data_Gruppo_3.tex" 1795090723 84093 78ded5ced4ae0b7c5f66d838cac8d5ed ""
-  "Esonero_Big_Data_Gruppo_3.toc" 1795090765 7013 506ac57ac8a7a7c3e36b0ffb9382d6f7 "pdflatex"
-  "c:/Users/aless/Documents/Big Data/ciao-hadoop/Esonero_Big_Data_Gruppo_3/Esonero_Big_Data_Gruppo_3.tex" 1795090723 84093 78ded5ced4ae0b7c5f66d838cac8d5ed ""
+  "Esonero_Big_Data_Gruppo_3.aux" 1795098208 16822 eb900af5d871aeb3458812785f588018 "pdflatex"
+  "Esonero_Big_Data_Gruppo_3.tex" 1795098138 89062 805be5abed7d417dc7ef22c115a41cbd ""
+  "Esonero_Big_Data_Gruppo_3.toc" 1795098208 7225 2b217cecc2c975c23658f9ebf16b5f72 "pdflatex"
+  "c:/Users/aless/Documents/Big Data/ciao-hadoop/Esonero_Big_Data_Gruppo_3/Esonero_Big_Data_Gruppo_3.tex" 1795098138 89062 805be5abed7d417dc7ef22c115a41cbd ""
   (generated)
   "Esonero_Big_Data_Gruppo_3.aux"
   "Esonero_Big_Data_Gruppo_3.fls"

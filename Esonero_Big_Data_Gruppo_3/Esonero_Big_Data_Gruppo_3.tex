@@ -207,9 +207,20 @@ su tre gruppi di dataset di dimensione crescente:
 
 Tutte le esecuzioni sono state effettuate su una
 macchina virtuale Ubuntu con Hadoop 3.5.0.
-Il codice, scritto in Java all'interno di un progetto Maven,
+Il codice, scritto in Java,
 è stato esportato in un unico archivio \texttt{BigData.jar}
 contenente le classi dei tre job.
+
+Il progetto è gestito con Maven: le librerie di Hadoop
+necessarie alla compilazione (\texttt{hadoop-common} e
+\texttt{hadoop-mapreduce-client-core}, versione 3.5.0)
+sono dichiarate nel file \texttt{pom.xml} e vengono
+scaricate automaticamente, senza doverle importare a mano
+su ogni macchina di sviluppo. Le dipendenze hanno scope
+\texttt{provided}: servono soltanto in fase di compilazione,
+perché durante l'esecuzione vengono fornite
+dall'installazione di Hadoop; per questo motivo
+non vengono incluse nel jar, che resta di pochi kilobyte.
 
 Le tre configurazioni richieste dalla traccia
 sono state ottenute attivando, di volta in volta,
@@ -309,6 +320,7 @@ lo schema visto durante il corso; il suo possibile impatto
 è discusso nelle sezioni dei singoli job.
 
 \subsection{Misura dei tempi di esecuzione}
+\label{sec:tempi}
 
 Ciascun Driver misura il tempo complessivo di esecuzione
 con il metodo \texttt{System.\allowbreak currentTimeMillis()},
@@ -319,9 +331,30 @@ e l'esecuzione del job fino al suo completamento,
 e viene stampata soltanto se il job termina con successo.
 
 Ogni combinazione di job, configurazione e gruppo
-di dataset è stata eseguita una volta, per un totale
-di 27 esecuzioni; i valori riportati nelle tabelle
-sono quindi i tempi delle singole esecuzioni.
+di dataset è stata eseguita tre volte, per un totale
+di 81 esecuzioni. Le tabelle riportano i tempi
+delle singole esecuzioni e la loro media aritmetica,
+arrotondata al millisecondo; i confronti e i grafici
+si basano sulle medie.
+
+Le esecuzioni sono state organizzate in tre giri:
+in ciascun giro vengono eseguiti, nell'ordine, i tre job
+sui tre gruppi di dataset, e soltanto al termine
+del giro si passa alla ripetizione successiva.
+In questo modo le tre misure di una stessa combinazione
+non sono consecutive e risentono meno delle condizioni
+momentanee della macchina.
+
+Prima della serie in modalità Local i file dei dataset
+sono stati letti una volta, in modo da caricarli
+nella cache del sistema operativo.
+Ciononostante, nella maggior parte dei casi la prima
+esecuzione del Job 1, che apre ciascuna serie di misure,
+è risultata la più lenta delle tre. Il rallentamento
+riguarda quindi l'inizio della serie in sé più che
+la lettura dei dati, ed è dovuto probabilmente
+all'avvio dei primi processi Java e al caricamento
+delle librerie di Hadoop (avvio \textit{a freddo}).
 
 \subsection{Raccolta di log e risultati}
 
@@ -367,15 +400,16 @@ dei dati; questi file sono stati conservati insieme
 ai risultati.
 
 Log e risultati seguono la stessa convenzione di nomi,
-\texttt{job<N>-\allowbreak<configurazione>-\allowbreak<dataset>},
+\texttt{job<N>-\allowbreak<configurazione>-\allowbreak<dataset>-\allowbreak run<K>},
 con configurazione \texttt{local}, \texttt{pseudo} o \texttt{yarn}:
 
 \begin{verbatim}
 Esonero_Big_Data/
 |-- BigData.jar
 |-- datasets/      dataset_A/  dataset_B/  dataset_C/
-|-- logs/          job1-local-dataset_A.log  ...
-`-- outputs/       job1-local-dataset_A.txt  ...
+|-- logs/          job1-local-dataset_A-run1.log  ...
+|-- outputs/       job1-local-dataset_A-run1.txt  ...
+`-- tempi/         tempi-local.csv  tempi-pseudo.csv  tempi-yarn.csv
 \end{verbatim}
 
 \subsection{Verifica della correttezza}
@@ -928,7 +962,11 @@ Tabella~\ref{tab:job1local}.
 \textbf{B (ms)} &
 \textbf{C (ms)} \\
 \hline
-Singola & 6460 & 8376 & 12863 \\
+Esecuzione 1 & 10346 & 13551 & 11276 \\
+Esecuzione 2 & 5310 & 8627 & 9125 \\
+Esecuzione 3 & 5161 & 8330 & 11771 \\
+\hline
+\textbf{Media} & 6939 & 10169 & 10724 \\
 \hline
 \end{tabular}
 \caption{Tempi di esecuzione del Job 1 in modalità Local.}
@@ -940,6 +978,13 @@ in 6, 13 e 19 \textit{split} rispettivamente
 per i dataset A, B e C: sul filesystem locale
 i blocchi hanno una dimensione di 32 MB e i file
 CSV più grandi vengono quindi divisi in più split.
+
+La prima esecuzione è stata più lenta delle altre due
+(ad esempio 10346 millisecondi contro 5310 e 5161
+per il Dataset A), per l'avvio a freddo descritto
+nella Sezione~\ref{sec:tempi}. Questo effetto alza
+le medie del Job 1 in modalità Local, soprattutto
+per i Dataset A e B.
 
 \subsubsection{Esecuzione in modalità
 Pseudo-distributed senza YARN}
@@ -960,7 +1005,11 @@ Tabella~\ref{tab:job1pd}.
 \textbf{B (ms)} &
 \textbf{C (ms)} \\
 \hline
-Singola & 10636 & 10440 & 13691 \\
+Esecuzione 1 & 7538 & 10338 & 12055 \\
+Esecuzione 2 & 6195 & 9225 & 13308 \\
+Esecuzione 3 & 6075 & 9170 & 11644 \\
+\hline
+\textbf{Media} & 6603 & 9578 & 12336 \\
 \hline
 \end{tabular}
 \caption{Tempi di esecuzione del Job 1 in modalità Pseudo-distributed senza YARN.}
@@ -992,27 +1041,29 @@ Tabella~\ref{tab:job1yarn}.
 \textbf{B (ms)} &
 \textbf{C (ms)} \\
 \hline
-Singola & 42976 & 50721 & 73918 \\
+Esecuzione 1 & 54758 & 69533 & 112323 \\
+Esecuzione 2 & 36837 & 68131 & 105203 \\
+Esecuzione 3 & 35592 & 65044 & 93560 \\
+\hline
+\textbf{Media} & 42396 & 67569 & 103695 \\
 \hline
 \end{tabular}
 \caption{Tempi di esecuzione del Job 1 in modalità Pseudo-distributed con YARN.}
 \label{tab:job1yarn}
 \end{table}
 
-Sono stati eseguiti 3, 6 e 10 map task, tutti in modo
-\textit{data-local}, cioè sul nodo che conteneva i dati.
-Per il Dataset C YARN ha lanciato 11 map task
-a fronte di 10 split, uno dei quali è stato interrotto
-(\texttt{Killed map tasks=1}): si tratta dell'esecuzione
-speculativa, con cui YARN avvia una copia dei task
-più lenti e conserva il risultato di quella che termina
-per prima. Non si tratta quindi di un errore
-e il risultato del job non cambia.
+Trattandosi di un unico nodo, tutti i map task vengono
+eseguiti sul nodo che contiene i dati (\textit{data-local}).
+YARN può inoltre avviare una copia dei task più lenti
+e conservare il risultato di quella che termina per prima
+(\textit{esecuzione speculativa}): le copie scartate compaiono
+nei log come \texttt{Killed map tasks}, ma non si tratta
+di errori e il risultato del job non cambia.
 
 \subsubsection{Confronto delle configurazioni}
 
 Nella Tabella~\ref{tab:job1confronto} sono riportati
-i tempi di esecuzione delle tre configurazioni.
+i tempi medi delle tre configurazioni.
 
 \begin{table}[H]
 \centering
@@ -1024,30 +1075,32 @@ i tempi di esecuzione delle tre configurazioni.
 \textbf{B (ms)} &
 \textbf{C (ms)} \\
 \hline
-Local & 6460 & 8376 & 12863 \\
-PD senza YARN & 10636 & 10440 & 13691 \\
-PD con YARN & 42976 & 50721 & 73918 \\
+Local & 6939 & 10169 & 10724 \\
+PD senza YARN & 6603 & 9578 & 12336 \\
+PD con YARN & 42396 & 67569 & 103695 \\
 \hline
 \end{tabular}
-\caption{Confronto dei tempi di esecuzione del Job 1.}
+\caption{Tempi medi di esecuzione del Job 1 nelle tre configurazioni.}
 \label{tab:job1confronto}
 \end{table}
 
 La configurazione con YARN ha richiesto tempi
-sensibilmente superiori alle altre due: da circa 5,7
-a circa 6,7 volte il tempo della modalità Local.
+sensibilmente superiori alle altre due: in media da circa 6,1
+a circa 9,7 volte il tempo della modalità Local,
+con lo scarto più ampio per il Dataset C.
 Su una singola macchina YARN aggiunge il costo
 dell'avvio dell'ApplicationMaster e di un container
 per ciascun task, senza poter distribuire il lavoro
 su più nodi.
 
-La modalità Local è risultata la più veloce
-per tutti i gruppi. Lo scarto della modalità
-Pseudo-distributed senza YARN si riduce al crescere
-dei dati, passando da circa il 65\% per il Dataset A
-al 25\% per il Dataset B e al 6\% per il Dataset C:
-il costo aggiuntivo dell'accesso a HDFS sembra quindi
-in larga parte fisso.
+Le modalità Local e Pseudo-distributed senza YARN
+hanno tempi medi vicini: la seconda è risultata più veloce
+di circa il 5\% per i Dataset A e B e più lenta di circa
+il 15\% per il Dataset C. Il vantaggio per i Dataset A e B
+dipende però dalla prima esecuzione in modalità Local:
+considerando soltanto la seconda e la terza, la modalità
+Local sarebbe la più veloce per tutti i gruppi (in media
+5236, 8478 e 10448 millisecondi, contro 6603, 9578 e 12336).
 
 In tutte le configurazioni il tempo cresce
 dal Dataset A al Dataset C.
@@ -1071,7 +1124,7 @@ per i dataset A, B e C.
     width=0.95\textwidth,
     height=6cm,
     bar width=12pt,
-    ylabel={Tempo (ms)},
+    ylabel={Tempo medio (ms)},
     xlabel={Gruppo di dataset},
     symbolic x coords={A,B,C},
     xtick=data,
@@ -1090,21 +1143,21 @@ per i dataset A, B e C.
 ]
 
 \addplot coordinates {
-    (A,6460)
-    (B,8376)
-    (C,12863)
+    (A,6939)
+    (B,10169)
+    (C,10724)
 };
 
 \addplot coordinates {
-    (A,10636)
-    (B,10440)
-    (C,13691)
+    (A,6603)
+    (B,9578)
+    (C,12336)
 };
 
 \addplot coordinates {
-    (A,42976)
-    (B,50721)
-    (C,73918)
+    (A,42396)
+    (B,67569)
+    (C,103695)
 };
 
 \legend{
@@ -1116,7 +1169,7 @@ per i dataset A, B e C.
 \end{axis}
 \end{tikzpicture}
 
-\caption{Confronto dei tempi di esecuzione del Job 1 nelle tre configurazioni Hadoop.}
+\caption{Confronto dei tempi medi di esecuzione del Job 1 nelle tre configurazioni Hadoop.}
 \label{fig:job1tempi}
 
 \end{figure}
@@ -1654,7 +1707,11 @@ Tabella~\ref{tab:job2local}.
 \textbf{B (ms)} &
 \textbf{C (ms)} \\
 \hline
-Singola & 10214 & 9948 & 13111 \\
+Esecuzione 1 & 6557 & 9427 & 11221 \\
+Esecuzione 2 & 6748 & 8276 & 13554 \\
+Esecuzione 3 & 6945 & 9785 & 11392 \\
+\hline
+\textbf{Media} & 6750 & 9163 & 12056 \\
 \hline
 \end{tabular}
 \caption{Tempi di esecuzione del Job 2 in modalità Local.}
@@ -1686,7 +1743,11 @@ Tabella~\ref{tab:job2pd}.
 \textbf{B (ms)} &
 \textbf{C (ms)} \\
 \hline
-Singola & 8654 & 10503 & 14039 \\
+Esecuzione 1 & 7151 & 10240 & 13166 \\
+Esecuzione 2 & 7191 & 10158 & 12254 \\
+Esecuzione 3 & 7403 & 10475 & 12260 \\
+\hline
+\textbf{Media} & 7248 & 10291 & 12560 \\
 \hline
 \end{tabular}
 \caption{Tempi di esecuzione del Job 2 in modalità Pseudo-distributed senza YARN.}
@@ -1718,23 +1779,26 @@ Tabella~\ref{tab:job2yarn}.
 \textbf{B (ms)} &
 \textbf{C (ms)} \\
 \hline
-Singola & 36439 & 54941 & 84645 \\
+Esecuzione 1 & 44958 & 65952 & 111218 \\
+Esecuzione 2 & 45090 & 79543 & 97286 \\
+Esecuzione 3 & 49305 & 54103 & 97490 \\
+\hline
+\textbf{Media} & 46451 & 66533 & 101998 \\
 \hline
 \end{tabular}
 \caption{Tempi di esecuzione del Job 2 in modalità Pseudo-distributed con YARN.}
 \label{tab:job2yarn}
 \end{table}
 
-Sono stati eseguiti 3, 6 e 10 map task in modo
-\textit{data-local}.
-Per il Dataset C YARN ha lanciato 12 map task,
-due dei quali sono stati interrotti dall'esecuzione
-speculativa (\texttt{Killed map tasks=2}).
+Come per il Job 1, tutti i map task sono
+\textit{data-local} ed eventuali task interrotti
+(\texttt{Killed map tasks}) sono dovuti all'esecuzione
+speculativa.
 
 \subsubsection{Confronto delle configurazioni}
 
 Nella Tabella~\ref{tab:job2confronto} sono riportati
-i tempi di esecuzione delle tre configurazioni.
+i tempi medi delle tre configurazioni.
 
 \begin{table}[H]
 \centering
@@ -1746,30 +1810,28 @@ i tempi di esecuzione delle tre configurazioni.
 \textbf{B (ms)} &
 \textbf{C (ms)} \\
 \hline
-Local & 10214 & 9948 & 13111 \\
-PD senza YARN & 8654 & 10503 & 14039 \\
-PD con YARN & 36439 & 54941 & 84645 \\
+Local & 6750 & 9163 & 12056 \\
+PD senza YARN & 7248 & 10291 & 12560 \\
+PD con YARN & 46451 & 66533 & 101998 \\
 \hline
 \end{tabular}
-\caption{Confronto dei tempi di esecuzione del Job 2.}
+\caption{Tempi medi di esecuzione del Job 2 nelle tre configurazioni.}
 \label{tab:job2confronto}
 \end{table}
 
 Anche per il Job 2 la configurazione con YARN
-ha richiesto i tempi più elevati: da circa 3,6
-a circa 6,5 volte il tempo della modalità Local,
+ha richiesto i tempi più elevati: in media da circa 6,9
+a circa 8,5 volte il tempo della modalità Local,
 con uno scarto che cresce insieme alla dimensione
 dei dati.
 
-Le configurazioni Local e Pseudo-distributed
-senza YARN hanno tempi molto vicini: per il Dataset A
-la seconda è risultata più veloce di circa il 15\%,
-mentre per i Dataset B e C è stata più lenta
-di circa il 6--7\%.
-Anche il leggero calo del tempo in modalità Local
-tra il Dataset A e il Dataset B (10214 contro 9948
-millisecondi) rientra nella variabilità delle singole
-misure.
+La modalità Local è risultata la più veloce in tutti
+i gruppi, con tempi medi inferiori a quelli della modalità
+Pseudo-distributed senza YARN di circa il 4--11\%.
+Quest'ultima è però la più stabile: le sue tre esecuzioni
+differiscono al massimo di circa un secondo.
+Con tre sole esecuzioni, differenze di questo ordine
+restano comparabili con la variabilità delle misure.
 
 A differenza del Job 1, il Mapper del Job 2 emette
 una coppia per quasi ogni record: per il Dataset C
@@ -1802,7 +1864,7 @@ per i dataset A, B e C.
     width=0.95\textwidth,
     height=6cm,
     bar width=12pt,
-    ylabel={Tempo (ms)},
+    ylabel={Tempo medio (ms)},
     xlabel={Gruppo di dataset},
     symbolic x coords={A,B,C},
     xtick=data,
@@ -1821,21 +1883,21 @@ per i dataset A, B e C.
 ]
 
 \addplot coordinates {
-    (A,10214)
-    (B,9948)
-    (C,13111)
+    (A,6750)
+    (B,9163)
+    (C,12056)
 };
 
 \addplot coordinates {
-    (A,8654)
-    (B,10503)
-    (C,14039)
+    (A,7248)
+    (B,10291)
+    (C,12560)
 };
 
 \addplot coordinates {
-    (A,36439)
-    (B,54941)
-    (C,84645)
+    (A,46451)
+    (B,66533)
+    (C,101998)
 };
 
 \legend{
@@ -1847,7 +1909,7 @@ per i dataset A, B e C.
 \end{axis}
 \end{tikzpicture}
 
-\caption{Confronto dei tempi di esecuzione del Job 2 nelle tre configurazioni Hadoop.}
+\caption{Confronto dei tempi medi di esecuzione del Job 2 nelle tre configurazioni Hadoop.}
 \label{fig:job2tempi}
 
 \end{figure}
@@ -2454,7 +2516,11 @@ Tabella~\ref{tab:job3local}.
 \textbf{B (ms)} &
 \textbf{C (ms)} \\
 \hline
-Singola & 7260 & 10917 & 13685 \\
+Esecuzione 1 & 6798 & 10138 & 13623 \\
+Esecuzione 2 & 7341 & 11872 & 12297 \\
+Esecuzione 3 & 6797 & 10299 & 16203 \\
+\hline
+\textbf{Media} & 6979 & 10770 & 14041 \\
 \hline
 \end{tabular}
 \caption{Tempi di esecuzione del Job 3 in modalità Local.}
@@ -2484,7 +2550,11 @@ Tabella~\ref{tab:job3pd}.
 \textbf{B (ms)} &
 \textbf{C (ms)} \\
 \hline
-Singola & 8430 & 11949 & 14915 \\
+Esecuzione 1 & 7685 & 11240 & 13253 \\
+Esecuzione 2 & 7745 & 10895 & 13394 \\
+Esecuzione 3 & 8729 & 12313 & 15853 \\
+\hline
+\textbf{Media} & 8053 & 11483 & 14167 \\
 \hline
 \end{tabular}
 \caption{Tempi di esecuzione del Job 3 in modalità Pseudo-distributed senza YARN.}
@@ -2516,23 +2586,26 @@ Tabella~\ref{tab:job3yarn}.
 \textbf{B (ms)} &
 \textbf{C (ms)} \\
 \hline
-Singola & 37088 & 60081 & 95698 \\
+Esecuzione 1 & 39191 & 53287 & 115340 \\
+Esecuzione 2 & 31782 & 78556 & 79873 \\
+Esecuzione 3 & 44513 & 49939 & 74831 \\
+\hline
+\textbf{Media} & 38495 & 60594 & 90015 \\
 \hline
 \end{tabular}
 \caption{Tempi di esecuzione del Job 3 in modalità Pseudo-distributed con YARN.}
 \label{tab:job3yarn}
 \end{table}
 
-I map task sono stati eseguiti in modo \textit{data-local}.
-Per i Dataset B e C YARN ha lanciato rispettivamente 7 e 12
-map task, a fronte di 6 e 10 split: 1 e 3 task sono stati
-interrotti dall'esecuzione speculativa
-(\texttt{Killed map tasks}).
+Come per il Job 1, tutti i map task sono
+\textit{data-local} ed eventuali task interrotti
+(\texttt{Killed map tasks}) sono dovuti all'esecuzione
+speculativa.
 
 \subsubsection{Confronto delle configurazioni}
 
 Nella Tabella~\ref{tab:job3confronto} sono riportati
-i tempi di esecuzione delle tre configurazioni.
+i tempi medi delle tre configurazioni.
 
 \begin{table}[H]
 \centering
@@ -2544,26 +2617,28 @@ i tempi di esecuzione delle tre configurazioni.
 \textbf{B (ms)} &
 \textbf{C (ms)} \\
 \hline
-Local & 7260 & 10917 & 13685 \\
-PD senza YARN & 8430 & 11949 & 14915 \\
-PD con YARN & 37088 & 60081 & 95698 \\
+Local & 6979 & 10770 & 14041 \\
+PD senza YARN & 8053 & 11483 & 14167 \\
+PD con YARN & 38495 & 60594 & 90015 \\
 \hline
 \end{tabular}
-\caption{Confronto dei tempi di esecuzione del Job 3.}
+\caption{Tempi medi di esecuzione del Job 3 nelle tre configurazioni.}
 \label{tab:job3confronto}
 \end{table}
 
 Anche per il Job 3 la configurazione con YARN
-ha richiesto i tempi più elevati: da circa 5,1 a circa
-7 volte il tempo della modalità Local, con uno scarto
-che cresce insieme alla dimensione dei dati.
-Con 95698 millisecondi, il Dataset C con YARN
-è l'esecuzione più lunga dell'intero progetto.
+ha richiesto i tempi più elevati: in media da circa 5,5
+a circa 6,4 volte il tempo della modalità Local, con uno
+scarto che cresce insieme alla dimensione dei dati.
+È anche la configurazione con la maggiore variabilità:
+per il Dataset C le tre esecuzioni vanno da 74831
+a 115340 millisecondi, la più lunga dell'intero progetto.
 
-La modalità Local è risultata la più veloce
-per tutti i gruppi, con uno scarto della modalità
-Pseudo-distributed senza YARN pari a circa il 16\%
-per il Dataset A e al 9\% per i Dataset B e C.
+Le modalità Local e Pseudo-distributed senza YARN
+hanno tempi medi vicini: la seconda è risultata più lenta
+di circa il 15\% per il Dataset A e il 7\% per il Dataset B,
+mentre per il Dataset C i tempi coincidono (differenza
+inferiore all'1\%).
 In tutte le configurazioni il tempo cresce
 dal Dataset A al Dataset C.
 
@@ -2586,7 +2661,7 @@ per i dataset A, B e C.
     width=0.95\textwidth,
     height=6cm,
     bar width=12pt,
-    ylabel={Tempo (ms)},
+    ylabel={Tempo medio (ms)},
     xlabel={Gruppo di dataset},
     symbolic x coords={A,B,C},
     xtick=data,
@@ -2605,21 +2680,21 @@ per i dataset A, B e C.
 ]
 
 \addplot coordinates {
-    (A,7260)
-    (B,10917)
-    (C,13685)
+    (A,6979)
+    (B,10770)
+    (C,14041)
 };
 
 \addplot coordinates {
-    (A,8430)
-    (B,11949)
-    (C,14915)
+    (A,8053)
+    (B,11483)
+    (C,14167)
 };
 
 \addplot coordinates {
-    (A,37088)
-    (B,60081)
-    (C,95698)
+    (A,38495)
+    (B,60594)
+    (C,90015)
 };
 
 \legend{
@@ -2631,7 +2706,7 @@ per i dataset A, B e C.
 \end{axis}
 \end{tikzpicture}
 
-\caption{Confronto dei tempi di esecuzione del Job 3 nelle tre configurazioni Hadoop.}
+\caption{Confronto dei tempi medi di esecuzione del Job 3 nelle tre configurazioni Hadoop.}
 \label{fig:job3tempi}
 
 \end{figure}
@@ -2645,7 +2720,8 @@ al crescere dei dati.
 \section{Confronto tra i job e considerazioni finali}
 
 Nella Tabella~\ref{tab:confrontojob} sono riportati
-i tempi di tutte le 27 esecuzioni.
+i tempi medi di tutte le combinazioni, calcolati
+sulle 81 esecuzioni complessive.
 
 \begin{table}[H]
 \centering
@@ -2655,42 +2731,52 @@ i tempi di tutte le 27 esecuzioni.
 \textbf{Modalità} & \textbf{Job} &
 \textbf{A (ms)} & \textbf{B (ms)} & \textbf{C (ms)} \\
 \hline
-Local & Job 1 & 6460 & 8376 & 12863 \\
-      & Job 2 & 10214 & 9948 & 13111 \\
-      & Job 3 & 7260 & 10917 & 13685 \\
+Local & Job 1 & 6939 & 10169 & 10724 \\
+ & Job 2 & 6750 & 9163 & 12056 \\
+ & Job 3 & 6979 & 10770 & 14041 \\
 \hline
-PD senza YARN & Job 1 & 10636 & 10440 & 13691 \\
-              & Job 2 & 8654 & 10503 & 14039 \\
-              & Job 3 & 8430 & 11949 & 14915 \\
+PD senza YARN & Job 1 & 6603 & 9578 & 12336 \\
+ & Job 2 & 7248 & 10291 & 12560 \\
+ & Job 3 & 8053 & 11483 & 14167 \\
 \hline
-PD con YARN & Job 1 & 42976 & 50721 & 73918 \\
-            & Job 2 & 36439 & 54941 & 84645 \\
-            & Job 3 & 37088 & 60081 & 95698 \\
+PD con YARN & Job 1 & 42396 & 67569 & 103695 \\
+ & Job 2 & 46451 & 66533 & 101998 \\
+ & Job 3 & 38495 & 60594 & 90015 \\
 \hline
 \end{tabular}
-\caption{Tempi di esecuzione dei tre job nelle tre configurazioni.}
+\caption{Tempi medi di esecuzione dei tre job nelle tre configurazioni.}
 \label{tab:confrontojob}
 \end{table}
 
 \paragraph{Peso dello shuffle.}
 Nelle configurazioni Local e Pseudo-distributed senza YARN
-i tre job hanno tempi molto simili sullo stesso gruppo
+i tre job hanno tempi dello stesso ordine sullo stesso gruppo
 di dataset: per il Dataset C in modalità Local, ad esempio,
-si va da 12863 a 13685 millisecondi.
+si va da 10724 a 14041 millisecondi.
 Eppure i Job 2 e 3 emettono circa 55 volte più coppie
 del Job 1 (379119 e 375941 contro 6886).
 Con queste dimensioni dei dati, quindi, il tempo
 è dominato dalla lettura e dall'analisi dei file CSV
 più che dal volume dei dati trasferiti nello shuffle.
 
+\paragraph{Local e Pseudo-distributed senza YARN.}
+Le due configurazioni che non usano YARN hanno tempi
+molto vicini: la modalità Local è risultata in media
+leggermente più veloce in sette casi su nove, con differenze
+fino a circa il 15\%, mentre la modalità Pseudo-distributed
+senza YARN è stata più veloce soltanto per il Job 1
+sui Dataset A e B. Con queste dimensioni dei dati,
+quindi, la lettura da HDFS introduce al più
+un costo contenuto.
+
 \paragraph{YARN.}
-Con YARN le differenze tra i job sono più marcate:
-per il Dataset C si passa da circa 74 secondi
-per il Job 1 a circa 85 per il Job 2 e 96 per il Job 3.
-Queste differenze coincidono con un numero crescente
-di task interrotti dall'esecuzione speculativa
-(1, 2 e 3), ma con una sola misura per combinazione
-non è possibile stabilire un legame di causa.
+Con YARN i tempi medi per il Dataset C superano
+i 90 secondi per tutti e tre i job (da 90015
+a 103695 millisecondi). Le differenze tra i job sono
+però dello stesso ordine della variabilità tra le singole
+esecuzioni, che con YARN arriva fino a circa il 25\%
+della media, e non permettono di stabilire quale job
+sia il più costoso.
 In tutti i casi il costo di avvio dell'ApplicationMaster
 e dei container rende YARN la configurazione più lenta
 su una singola macchina; i suoi vantaggi emergerebbero
