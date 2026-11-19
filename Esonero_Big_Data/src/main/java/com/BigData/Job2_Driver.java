@@ -1,6 +1,8 @@
 package com.BigData;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
@@ -15,7 +17,7 @@ public class Job2_Driver {
         // Verifichiamo che siano stati specificati
         // i percorsi di input e output del job.
         if (args.length != 2) {
-            System.err.println("Uso corretto: Job2_Driver <input_path> <output_path>");
+            System.err.println("Uso corretto: Job2_Driver <input_dir> <output_path>");
             System.exit(-1);
         }
 
@@ -51,7 +53,25 @@ public class Job2_Driver {
         job.setNumReduceTasks(1);
 
         // Specifichiamo i percorsi dei dati di input e output.
-        FileInputFormat.addInputPath(job, new Path(args[0]));
+        // Aggiungiamo come input soltanto i file CSV dei video
+        // presenti nella cartella: gli eventuali file JSON delle
+        // categorie (usati dal Job 3) vengono ignorati.
+        Path inputDir = new Path(args[0]);
+        FileSystem fs = inputDir.getFileSystem(conf);
+        int csvCount = 0;
+
+        for (FileStatus status : fs.listStatus(inputDir)) {
+            if (status.isFile() && status.getPath().getName().endsWith("videos.csv")) {
+                FileInputFormat.addInputPath(job, status.getPath());
+                csvCount++;
+            }
+        }
+
+        if (csvCount == 0) {
+            System.err.println("Nessun file *videos.csv trovato in " + inputDir);
+            System.exit(1);
+        }
+
         FileOutputFormat.setOutputPath(job, new Path(args[1]));
 
         // Avviamo il job e attendiamo che termini.
