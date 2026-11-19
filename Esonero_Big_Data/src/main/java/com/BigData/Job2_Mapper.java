@@ -11,48 +11,35 @@ public class Job2_Mapper extends Mapper<LongWritable, Text, Text, IntWritable> {
 
     private static final int CHANNEL_COLUMN = 3;
 
-    private Text keyColumn = new Text();
+    // Ogni record conta come un'occorrenza del suo canale.
+    private static final IntWritable ONE = new IntWritable(1);
 
-    // Oggetto IntWritable associato a ogni occorrenza del canale.
-    // Ogni record valido contribuisce con il valore 1.
-    private final IntWritable one = new IntWritable(1);
+    // Riutilizzato per ogni record, invece di creare un nuovo oggetto ogni volta.
+    private final Text channel = new Text();
 
     @Override
     protected void map(LongWritable key, Text value, Context context)
             throws IOException, InterruptedException {
 
-        // Convertiamo il record ricevuto dal Mapper in una stringa Java.
-        String riga = value.toString();
+        String line = value.toString();
 
-        // Saltiamo l'intestazione del file CSV,
-        // perché non contiene informazioni su un video.
-        if (riga.startsWith("video_id,")) {
+        // Intestazione del CSV.
+        if (line.startsWith("video_id,")) {
             return;
         }
 
-        // Richiamiamo il metodo statico dalla classe esterna CSV_Parser
-        String[] campi = CSV_Parser.parseCsvLine(riga);
+        String[] fields = CSV_Parser.parseCsvLine(line);
 
-        // Verifichiamo che la riga contenga almeno le colonne
-        // necessarie per accedere al nome del canale.
-        if (campi.length <= CHANNEL_COLUMN) {
+        // Righe che non arrivano alla colonna del canale.
+        if (fields.length <= CHANNEL_COLUMN) {
             return;
         }
 
-        // Estraiamo il nome del canale dalla quarta colonna.
-        // trim() elimina eventuali spazi iniziali e finali.
-        String canale = campi[CHANNEL_COLUMN].trim();
+        String channelName = fields[CHANNEL_COLUMN].trim();
 
-        // Escludiamo i record con il nome del canale vuoto.
-        if (!canale.isEmpty()) {
-
-            // Impostiamo il nome del canale come chiave di output.
-            keyColumn.set(canale);
-
-            // Emettiamo la coppia <nomeCanale, 1>.
-            // Il Reducer sommerà successivamente tutti gli 1
-            // associati allo stesso canale.
-            context.write(keyColumn, one);
+        if (!channelName.isEmpty()) {
+            channel.set(channelName);
+            context.write(channel, ONE);
         }
     }
 }

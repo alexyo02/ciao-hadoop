@@ -15,31 +15,27 @@ public class Job1_Driver {
     public static void main(String[] args) throws Exception {
 
         if (args.length != 2) {
-            System.err.println("Uso corretto: Job1_Driver <input_dir> <output_path>");
-            System.exit(-1);
+            System.err.println("Uso: Job1_Driver <input_dir> <output_dir>");
+            System.exit(1);
         }
 
-        // Memorizziamo l'istante iniziale per misurare
-        // il tempo complessivo di esecuzione del job.
         long startTime = System.currentTimeMillis();
 
+        // La modalità di esecuzione dipende dai file XML di configurazione.
         Configuration conf = new Configuration();
         Job job = Job.getInstance(conf, "Job1_DislikeCounter");
-
         job.setJarByClass(Job1_Driver.class);
 
         job.setMapperClass(Job1_Mapper.class);
         job.setReducerClass(Job1_Reducer.class);
 
+        // Ci interessa solo il titolo: il valore delle coppie è vuoto.
         job.setMapOutputKeyClass(Text.class);
         job.setMapOutputValueClass(NullWritable.class);
-
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(NullWritable.class);
 
-        // Aggiungiamo come input soltanto i file CSV dei video
-        // presenti nella cartella: gli eventuali file JSON delle
-        // categorie (usati dal Job 3) vengono ignorati.
+        // Come input usiamo solo i CSV: i JSON nella stessa cartella servono al Job 3.
         Path inputDir = new Path(args[0]);
         FileSystem fs = inputDir.getFileSystem(conf);
         int csvCount = 0;
@@ -58,24 +54,16 @@ public class Job1_Driver {
 
         FileOutputFormat.setOutputPath(job, new Path(args[1]));
 
-        // Avviamo il job e attendiamo che termini.
-        boolean completato = job.waitForCompletion(true);
+        boolean success = job.waitForCompletion(true);
+        long executionTime = System.currentTimeMillis() - startTime;
 
-        // Memorizziamo l'istante finale.
-        long endTime = System.currentTimeMillis();
-
-        // Calcoliamo la durata in millisecondi.
-        long executionTime = endTime - startTime;
-
-        // Stampiamo il tempo soltanto se il job è riuscito.
-        if (completato) {
-            System.out.println("Tempo di esecuzione: "
-                    + executionTime + " millisecondi");
+        // Il tempo vale per il benchmark solo se il job è andato a buon fine.
+        if (success) {
+            System.out.println("Tempo di esecuzione: " + executionTime + " millisecondi");
         } else {
             System.err.println("Job 1 non completato: tempo non valido per il benchmark.");
         }
 
-        // Restituiamo 0 in caso di successo e 1 in caso di errore.
-        System.exit(completato ? 0 : 1);
+        System.exit(success ? 0 : 1);
     }
 }
